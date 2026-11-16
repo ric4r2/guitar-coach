@@ -108,6 +108,23 @@ namespace theory
     juce::String inversionName (int inversion);                        // "root position", "1st inversion"
     juce::String chordToneLabel (int index, const ChordType&);         // "R", "3", "b3", "5", "b5", "#5"
 
+    // ---------------------------------------------------------------- diatonic harmony (major keys)
+    struct DiatonicChord
+    {
+        int degree = 0;                    // 0 = I ... 6 = vii
+        Note root;
+        const ChordType* type = nullptr;
+        std::vector<Note> notes;
+    };
+    // the chord built on a degree of a major key, by stacking 3rds from the scale (three or four notes)
+    DiatonicChord diatonicChord (const Note& tonic, int degree, bool seventh);
+    const ChordType* identifyChord (const std::vector<Note>& stackedThirds);   // nullptr when unknown
+    juce::String romanNumeral (int degree, const ChordType&);  // triads: I ii iii IV V vi vii°; sevenths: Imaj7 IIm7 V7 VIIm7b5
+    juce::String harmonicFunction (int degree);                // "tonic", "subdominant", "dominant"
+
+    struct Progression { juce::String name; std::vector<int> degrees; bool sevenths = false; };
+    const std::vector<Progression>& commonProgressions();      // I-IV-V-I, I-vi-IV-V, I-V-vi-IV, II-V-I, I-vi-ii-V ...
+
     // a note an octave higher or lower
     inline Note octaveShift (Note n, int octaves) { n.octave += octaves; return n; }
 }

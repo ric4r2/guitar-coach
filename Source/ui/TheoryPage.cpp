@@ -98,7 +98,16 @@ void TheoryPage::setupDiagram()
         return marks;
     };
 
-    if (d.hasProperty ("bluesChart"))
+    if (auto* rhythm = d["rhythm"].getArray())
+    {
+        std::vector<StaffView::RhythmNote> notes;
+        for (auto& e : *rhythm)
+            if (auto* pair = e.getArray(); pair != nullptr && pair->size() >= 2)
+                notes.push_back ({ Note { 6, 0, 3 }, (double) (*pair)[0], (double) (*pair)[1], {} });
+        diagramStaff.setRhythm (notes, (double) d.getProperty ("beats", 4));
+        diagramStaff.setVisible (true);
+    }
+    else if (d.hasProperty ("bluesChart"))
     {
         int index = 0;
         for (int i = 0; i < (int) bluesForms().size(); ++i)

@@ -8,6 +8,16 @@ ExerciseView::ExerciseView (AudioEngine& e, Progress& p) : engine (e), progress 
     addChildComponent (listenButton);
     addChildComponent (nextButton);
     addChildComponent (againButton);
+    addChildComponent (tapPad);
+    setWantsKeyboardFocus (true);
+    tapPad.onTap = [this]
+    {
+        if (done || ! q.tapRhythm) return;
+        if (taps.empty() && countInStartedAt < 0)
+            startCountIn();
+        else
+            tap (juce::Time::getMillisecondCounterHiRes() / 1000.0, 0);
+    };
 
     flatButton.setButtonText (theory::accidentalText (-1));
     naturalButton.setButtonText (juce::String (juce::CharPointer_UTF8 ("\xe2\x99\xae")));
@@ -123,15 +133,25 @@ void ExerciseView::showQuestion()
     wrongMarks.clear();
     enteredMarks.clear();
     seqPos = q.sequenceGiven;
+    taps.clear();
+    tapSource = -1;
+    countInStartedAt = -1.0;
+    ++attemptId;
     questionShownAt = juce::Time::getMillisecondCounter();
 
-    const bool useStaff = ! q.staffNotes.empty() || q.staffClick || ! q.revealStaff.empty() || q.showKeySignature || ! q.sequence.empty();
+    const bool useStaff = ! q.staffNotes.empty() || q.staffClick || ! q.revealStaff.empty() || q.showKeySignature || ! q.sequence.empty() || ! q.rhythm.empty();
     staff.setVisible (useStaff);
     staff.setKeySignature (q.showKeySignature ? q.keySignature : 0);
     if (q.staffChord)
         staff.setChords ({ q.staffNotes });
     else
         staff.setNotes (q.staffNotes);
+    if (! q.rhythm.empty())
+        showRhythm();
+    tapPad.setVisible (q.tapRhythm);
+    updateTapPad();
+    if (q.tapRhythm && isShowing())
+        grabKeyboardFocus();
     staff.setClickable (q.staffClick);
     staff.setAccidental (0);
     naturalButton.setToggleState (true, juce::dontSendNotification);
@@ -175,7 +195,7 @@ void ExerciseView::showQuestion()
 
 void ExerciseView::updateButtons()
 {
-    nextButton.setVisible (! finished && (done || q.acceptsPlaying || q.fretClick || q.staffClick));
+    nextButton.setVisible (! finished && (done || q.acceptsPlaying || q.fretClick || q.staffClick || q.tapRhythm || ! q.sequence.empty()));
     nextButton.setButtonText (done ? (questionNumber >= questionsPerRound ? "Finish" : "Next") : "Show answer");
     againButton.setVisible (finished);
     const bool canListen = ! q.listenMidi.empty() || ! q.listenChords.empty() || q.listenBacking >= 0;
@@ -319,6 +339,15 @@ void ExerciseView::playListen()
         engine.getBacking().start();
         return;
     }
+    if (! q.listenTimes.empty())
+    {
+        for (size_t i = 0; i < q.listenMidi.size() && i < q.listenTimes.size(); ++i)
+        {
+            const bool click = q.listenMidi[i] >= 84;
+            engine.playNote (q.listenMidi[i], q.listenTimes[i], click ? 0.08 : 0.25, click ? 0.45f : 0.8f);
+        }
+        return;
+    }
     if (! q.listenChords.empty())
     {
         for (size_t c = 0; c < q.listenChords.size(); ++c)
@@ -374,6 +403,120 @@ void ExerciseView::sequenceAnswer (bool ok, const juce::String& wrongText)
     feedback = q.sequence[(size_t) seqPos - 1].name() + juce::String (juce::CharPointer_UTF8 (" \xe2\x9c\x93   Next note?"));
     feedbackColour = Palette::green;
     repaint();
+}
+
+// ---------------------------------------------------------------- rhythm tapping
+
+void ExerciseView::showRhythm (const std::vector<juce::Colour>& colours)
+{
+    std::vector<StaffView::RhythmNote> notes;
+    for (size_t i = 0; i < q.rhythm.size(); ++i)
+        notes.push_back ({ theory::Note { 6, 0, 3 }, q.rhythm[i].beat, q.rhythm[i].length, {}, i < colours.size() ? colours[i] : Palette::ink });
+    staff.setRhythm (notes, q.rhythmBeats);
+}
+
+void ExerciseView::updateTapPad()
+{
+    if (! q.tapRhythm)
+        return;
+    const int n = (int) q.rhythm.size();
+    if (done)
+        tapPad.setText ("Done", Palette::green);
+    else if (taps.empty() && countInStartedAt < 0)
+        tapPad.setText ("Click here to start: 4 clicks count you in, then tap here, press Space or strum", Palette::blue);
+    else if (taps.empty())
+        tapPad.setText ("1, 2, 3, 4... tap!", Palette::gold);
+    else
+        tapPad.setText ("Tap " + juce::String ((int) taps.size()) + " of " + juce::String (n), Palette::gold);
+}
+
+void ExerciseView::startCountIn()
+{
+    // clicks for the count-in bar and all the bars of the rhythm, then a check in case taps are missing
+    countInStartedAt = juce::Time::getMillisecondCounterHiRes() / 1000.0;
+    const double spb = 60.0 / q.tapBpm;
+    const int beats = 4 + (int) std::ceil (q.rhythmBeats);
+    for (int b = 0; b < beats; ++b)
+        engine.playNote (b < 4 ? 88 : 84, b * spb, 0.06, b % 4 == 0 ? 0.6f : 0.4f);
+    const int id = attemptId;
+    juce::Timer::callAfterDelay ((int) ((beats + 1.5) * spb * 1000.0), [safe = juce::Component::SafePointer<ExerciseView> (this), id]
+    {
+        if (safe != nullptr && safe->attemptId == id && ! safe->done && ! safe->taps.empty())
+            safe->evaluateTaps();
+    });
+    updateTapPad();
+}
+
+void ExerciseView::tap (double seconds, int source)
+{
+    if (done || finished || ! q.tapRhythm)
+        return;
+    if (tapSource >= 0 && source != tapSource)
+        return;   // one clock per attempt
+    tapSource = source;
+    if (source == 0)
+        tapPad.pulse();
+    taps.push_back (seconds);
+    updateTapPad();
+    if (taps.size() >= q.rhythm.size())
+        evaluateTaps();
+}
+
+void ExerciseView::evaluateTaps()
+{
+    const auto r = scoreTaps (q.rhythm, taps, q.tapBpm);
+    std::vector<juce::Colour> cols;
+    juce::StringArray late, early;
+    for (size_t i = 0; i < q.rhythm.size(); ++i)
+    {
+        if (i >= r.errorsInBeats.size()) { cols.push_back (Palette::red); continue; }
+        const double e = r.errorsInBeats[i];
+        cols.push_back (std::abs (e) < 0.125 ? Palette::green.darker (0.4f) : std::abs (e) < 0.25 ? Palette::gold.darker (0.3f) : Palette::red);
+        if (e >= 0.25) late.add (juce::String ((int) i + 1));
+        if (e <= -0.25) early.add (juce::String ((int) i + 1));
+    }
+    showRhythm (cols);
+    const bool ok = r.score >= 0.75 && r.missing == 0 && r.extra == 0;
+    juce::String hint = "Timing " + juce::String (juce::roundToInt (r.score * 100)) + "%.";
+    if (r.missing > 0) hint << " " << r.missing << (r.missing == 1 ? " note was not tapped." : " notes were not tapped.");
+    if (! late.isEmpty()) hint << " Late: note " << late.joinIntoString (", ") << ".";
+    if (! early.isEmpty()) hint << " Early: note " << early.joinIntoString (", ") << ".";
+    if (ok)
+        q.explanation = hint + " " + q.explanation;
+    taps.clear();
+    tapSource = -1;
+    countInStartedAt = -1.0;
+    ++attemptId;
+    attempt (ok, hint, false);
+    updateTapPad();
+}
+
+void ExerciseView::onsetDetected (double inputSeconds)
+{
+    if (q.tapRhythm && (countInStartedAt >= 0 || ! taps.empty()))
+        tap (inputSeconds, 1);
+}
+
+bool ExerciseView::keyPressed (const juce::KeyPress& k)
+{
+    if (k == juce::KeyPress::spaceKey && q.tapRhythm && ! done)
+    {
+        if (taps.empty() && countInStartedAt < 0)
+            startCountIn();
+        else
+            tap (juce::Time::getMillisecondCounterHiRes() / 1000.0, 0);
+        return true;
+    }
+    return false;
+}
+
+void ExerciseView::simulateTaps (double jitter)
+{
+    juce::Random r (3);
+    const double spb = 60.0 / q.tapBpm;
+    for (auto& e : q.rhythm)
+        tap (10.0 + (e.beat + (r.nextDouble() - 0.5) * 2.0 * jitter) * spb, 0);
+    stopTimer();
 }
 
 void ExerciseView::simulateChoice (bool correct)
@@ -486,7 +629,9 @@ void ExerciseView::resized()
         const int cols = q.choiceColumns > 0 ? juce::jmin (q.choiceColumns, n) : juce::jmin (n, 7);
         const int rows = (n + cols - 1) / cols;
         auto area = r.removeFromBottom (rows * 46);
-        const int w = juce::jmin (150, area.getWidth() / cols);
+        int longest = 0;
+        for (auto& c : q.choices) longest = juce::jmax (longest, c.length());
+        const int w = juce::jmin (longest > 14 ? 320 : longest > 9 ? 200 : 150, area.getWidth() / cols);
         for (int i = 0; i < n; ++i)
         {
             const int row = i / cols, col = i % cols;
@@ -504,6 +649,12 @@ void ExerciseView::resized()
         staff.setBounds (st.withSizeKeepingCentre (juce::jmin (st.getWidth(), 560), st.getHeight()));
         r.removeFromTop (8);
         fretboard.setBounds (r.withSizeKeepingCentre (r.getWidth(), juce::jmin (r.getHeight(), 230)));
+    }
+    else if (s && q.tapRhythm)
+    {
+        auto pad = r.removeFromBottom (juce::jmin (110, r.getHeight() / 3));
+        tapPad.setBounds (pad.withSizeKeepingCentre (juce::jmin (pad.getWidth(), 760), pad.getHeight()).reduced (0, 6));
+        staff.setBounds (r.withSizeKeepingCentre (juce::jmin (r.getWidth(), 860), juce::jmin (r.getHeight(), 210)));
     }
     else if (s)
     {

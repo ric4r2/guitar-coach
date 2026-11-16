@@ -18,11 +18,42 @@
         "## How to practise",
         "Say each name out loud. Do not count up from the bottom line every time: learn landmarks. Bottom line E, middle line B, top line F, and the four spaces spell FACE. Then answer by clicking, and after that by playing each note on the guitar."
       ],
-      "diagram": { "staff": [ "E3", "F3", "G3", "A3", "B3", "C4", "D4", "E4", "F4" ], "labels": true },
+      "diagram": {
+        "staff": [
+          "E3",
+          "F3",
+          "G3",
+          "A3",
+          "B3",
+          "C4",
+          "D4",
+          "E4",
+          "F4"
+        ],
+        "labels": true
+      },
       "exercises": [
-        { "type": "nameStaff", "title": "Name the note", "lo": "E3", "hi": "F4", "accidentals": false },
-        { "type": "writeStaff", "title": "Write the note", "lo": "E3", "hi": "F4", "accidentals": false },
-        { "type": "playStaff", "title": "Play what you read", "lo": "E3", "hi": "F4", "accidentals": false }
+        {
+          "type": "nameStaff",
+          "title": "Name the note",
+          "lo": "E3",
+          "hi": "F4",
+          "accidentals": false
+        },
+        {
+          "type": "writeStaff",
+          "title": "Write the note",
+          "lo": "E3",
+          "hi": "F4",
+          "accidentals": false
+        },
+        {
+          "type": "playStaff",
+          "title": "Play what you read",
+          "lo": "E3",
+          "hi": "F4",
+          "accidentals": false
+        }
       ]
     },
     {
@@ -45,12 +76,60 @@
         "## Open position on the staff",
         "Notes below the staff are written with short extra lines called ledger lines. The open low E is written below three ledger lines. In open position every natural note from low E up to G on the 1st string, 3rd fret, can be played within the first three frets."
       ],
-      "diagram": { "fretboard": "naturals", "strings": [ 6, 5, 4, 3, 2, 1 ], "maxFret": 12 },
+      "diagram": {
+        "fretboard": "naturals",
+        "strings": [
+          6,
+          5,
+          4,
+          3,
+          2,
+          1
+        ],
+        "maxFret": 12
+      },
       "exercises": [
-        { "type": "nameFret", "title": "Name it: 6th and 5th strings", "strings": [ 6, 5 ], "maxFret": 12, "accidentals": false },
-        { "type": "findFret", "title": "Find it: 6th and 5th strings", "strings": [ 6, 5 ], "maxFret": 12, "accidentals": false },
-        { "type": "nameFret", "title": "Name it: all strings", "strings": [ 6, 5, 4, 3, 2, 1 ], "maxFret": 12, "accidentals": false },
-        { "type": "playStaff", "title": "Play open position from the staff", "lo": "E2", "hi": "G4", "accidentals": false }
+        {
+          "type": "nameFret",
+          "title": "Name it: 6th and 5th strings",
+          "strings": [
+            6,
+            5
+          ],
+          "maxFret": 12,
+          "accidentals": false
+        },
+        {
+          "type": "findFret",
+          "title": "Find it: 6th and 5th strings",
+          "strings": [
+            6,
+            5
+          ],
+          "maxFret": 12,
+          "accidentals": false
+        },
+        {
+          "type": "nameFret",
+          "title": "Name it: all strings",
+          "strings": [
+            6,
+            5,
+            4,
+            3,
+            2,
+            1
+          ],
+          "maxFret": 12,
+          "accidentals": false
+        },
+        {
+          "type": "playStaff",
+          "title": "Play open position from the staff",
+          "lo": "E2",
+          "hi": "G4",
+          "accidentals": false
+        }
       ]
     },
     {
@@ -70,12 +149,46 @@
         "## On the staff",
         "The sharp or flat is written just before the note head, on the same line or space. It lasts until the end of the bar."
       ],
-      "diagram": { "fretboard": "chromatic", "strings": [ 6 ], "maxFret": 12 },
+      "diagram": {
+        "fretboard": "chromatic",
+        "strings": [
+          6
+        ],
+        "maxFret": 12
+      },
       "exercises": [
-        { "type": "steps", "title": "Half step or whole step?" },
-        { "type": "nameFret", "title": "Name it with sharps and flats", "strings": [ 6, 5, 4, 3, 2, 1 ], "maxFret": 12, "accidentals": true },
-        { "type": "nameStaff", "title": "Read sharps and flats", "lo": "E3", "hi": "F4", "accidentals": true },
-        { "type": "writeStaff", "title": "Write sharps and flats", "lo": "E3", "hi": "F4", "accidentals": true }
+        {
+          "type": "steps",
+          "title": "Half step or whole step?"
+        },
+        {
+          "type": "nameFret",
+          "title": "Name it with sharps and flats",
+          "strings": [
+            6,
+            5,
+            4,
+            3,
+            2,
+            1
+          ],
+          "maxFret": 12,
+          "accidentals": true
+        },
+        {
+          "type": "nameStaff",
+          "title": "Read sharps and flats",
+          "lo": "E3",
+          "hi": "F4",
+          "accidentals": true
+        },
+        {
+          "type": "writeStaff",
+          "title": "Write sharps and flats",
+          "lo": "E3",
+          "hi": "F4",
+          "accidentals": true
+        }
       ]
     },
     {
@@ -106,13 +219,89 @@
         "## By ear",
         "Sing the lower note, then the upper one. Major 3rds sound bright, minor 3rds darker, perfect 4ths and 5ths open and hollow, the tritone tense, and the octave like the same note higher."
       ],
-      "diagram": { "intervals": "A2" },
+      "diagram": {
+        "intervals": "A2"
+      },
       "exercises": [
-        { "type": "intervalSemis", "title": "How many semitones?", "set": [ "P1", "m2", "M2", "m3", "M3", "P4", "A4", "P5", "m6", "M6", "m7", "M7", "P8" ] },
-        { "type": "intervalName", "title": "Name the interval", "set": [ "m2", "M2", "m3", "M3", "P4", "A4", "P5", "m6", "M6", "m7", "M7", "P8" ] },
-        { "type": "playInterval", "title": "Play the interval", "set": [ "M2", "m3", "M3", "P4", "P5", "M6", "P8" ] },
-        { "type": "earInterval", "title": "Ear: 3rds, 4ths, 5ths, octave", "set": [ "m3", "M3", "P4", "P5", "P8" ] },
-        { "type": "earInterval", "title": "Ear: all intervals", "set": [ "m2", "M2", "m3", "M3", "P4", "A4", "P5", "m6", "M6", "m7", "M7", "P8" ] }
+        {
+          "type": "intervalSemis",
+          "title": "How many semitones?",
+          "set": [
+            "P1",
+            "m2",
+            "M2",
+            "m3",
+            "M3",
+            "P4",
+            "A4",
+            "P5",
+            "m6",
+            "M6",
+            "m7",
+            "M7",
+            "P8"
+          ]
+        },
+        {
+          "type": "intervalName",
+          "title": "Name the interval",
+          "set": [
+            "m2",
+            "M2",
+            "m3",
+            "M3",
+            "P4",
+            "A4",
+            "P5",
+            "m6",
+            "M6",
+            "m7",
+            "M7",
+            "P8"
+          ]
+        },
+        {
+          "type": "playInterval",
+          "title": "Play the interval",
+          "set": [
+            "M2",
+            "m3",
+            "M3",
+            "P4",
+            "P5",
+            "M6",
+            "P8"
+          ]
+        },
+        {
+          "type": "earInterval",
+          "title": "Ear: 3rds, 4ths, 5ths, octave",
+          "set": [
+            "m3",
+            "M3",
+            "P4",
+            "P5",
+            "P8"
+          ]
+        },
+        {
+          "type": "earInterval",
+          "title": "Ear: all intervals",
+          "set": [
+            "m2",
+            "M2",
+            "m3",
+            "M3",
+            "P4",
+            "A4",
+            "P5",
+            "m6",
+            "M6",
+            "m7",
+            "M7",
+            "P8"
+          ]
+        }
       ]
     },
     {
@@ -134,13 +323,85 @@
         "## On the guitar",
         "On one string the pattern is frets: 0 2 4 5 7 9 11 12. Across the neck, a one-octave shape starting with the 2nd finger on the 6th string covers the whole scale without moving your hand. The Practice tab shows all five positions."
       ],
-      "diagram": { "scale": { "root": "C3", "type": "major" } },
+      "diagram": {
+        "scale": {
+          "root": "C3",
+          "type": "major"
+        }
+      },
       "exercises": [
-        { "type": "spellScale", "title": "Spell major scales: C G D F B♭", "scale": "major", "roots": [ "C", "G", "D", "F", "Bb" ] },
-        { "type": "scaleDegree", "title": "Degrees of the scale", "scale": "major", "roots": [ "C", "G", "D", "A", "F", "Bb", "Eb" ] },
-        { "type": "writeScale", "title": "Write major scales", "scale": "major", "roots": [ "C", "G", "D", "A", "F", "Bb", "Eb" ] },
-        { "type": "spellScale", "title": "Spell all common major scales", "scale": "major", "roots": [ "C", "G", "D", "A", "E", "B", "F", "Bb", "Eb", "Ab", "Db" ] },
-        { "type": "playScale", "title": "Play the scale you are given", "scale": "major", "roots": [ "C", "G", "D", "A", "E", "F", "Bb" ] }
+        {
+          "type": "spellScale",
+          "title": "Spell major scales: C G D F B♭",
+          "scale": "major",
+          "roots": [
+            "C",
+            "G",
+            "D",
+            "F",
+            "Bb"
+          ]
+        },
+        {
+          "type": "scaleDegree",
+          "title": "Degrees of the scale",
+          "scale": "major",
+          "roots": [
+            "C",
+            "G",
+            "D",
+            "A",
+            "F",
+            "Bb",
+            "Eb"
+          ]
+        },
+        {
+          "type": "writeScale",
+          "title": "Write major scales",
+          "scale": "major",
+          "roots": [
+            "C",
+            "G",
+            "D",
+            "A",
+            "F",
+            "Bb",
+            "Eb"
+          ]
+        },
+        {
+          "type": "spellScale",
+          "title": "Spell all common major scales",
+          "scale": "major",
+          "roots": [
+            "C",
+            "G",
+            "D",
+            "A",
+            "E",
+            "B",
+            "F",
+            "Bb",
+            "Eb",
+            "Ab",
+            "Db"
+          ]
+        },
+        {
+          "type": "playScale",
+          "title": "Play the scale you are given",
+          "scale": "major",
+          "roots": [
+            "C",
+            "G",
+            "D",
+            "A",
+            "E",
+            "F",
+            "Bb"
+          ]
+        }
       ]
     },
     {
@@ -163,12 +424,36 @@
         "## On the guitar",
         "The circle is also a fingerboard shape: the same fret on the next string up is a 4th higher, one step counter-clockwise. The same fret on the next string down is a 4th lower, which is the same letter as a 5th up: one step clockwise. Moving a shape across the strings walks you around the circle."
       ],
-      "diagram": { "circle": true },
+      "diagram": {
+        "circle": true
+      },
       "exercises": [
-        { "type": "nameKeySig", "title": "Name the major key: up to 4 sharps or flats", "lo": -4, "hi": 4 },
-        { "type": "countKeySig", "title": "How many sharps or flats?", "lo": -6, "hi": 6 },
-        { "type": "circle", "title": "Around the circle", "modes": [ "fifthUp", "fifthDown" ] },
-        { "type": "nameKeySig", "title": "Name the major key: all keys", "lo": -7, "hi": 7 }
+        {
+          "type": "nameKeySig",
+          "title": "Name the major key: up to 4 sharps or flats",
+          "lo": -4,
+          "hi": 4
+        },
+        {
+          "type": "countKeySig",
+          "title": "How many sharps or flats?",
+          "lo": -6,
+          "hi": 6
+        },
+        {
+          "type": "circle",
+          "title": "Around the circle",
+          "modes": [
+            "fifthUp",
+            "fifthDown"
+          ]
+        },
+        {
+          "type": "nameKeySig",
+          "title": "Name the major key: all keys",
+          "lo": -7,
+          "hi": 7
+        }
       ]
     },
     {
@@ -192,14 +477,76 @@
         "## Hearing the difference",
         "Major sounds settled and bright. Natural minor sounds darker and sadder. Harmonic minor has that one wide step near the top. Listen for the 3rd first, then the step into the octave."
       ],
-      "diagram": { "scale": { "root": "A3", "type": "naturalMinor" } },
+      "diagram": {
+        "scale": {
+          "root": "A3",
+          "type": "naturalMinor"
+        }
+      },
       "exercises": [
-        { "type": "spellScale", "title": "Spell natural minor scales", "scale": "naturalMinor", "roots": [ "A", "E", "B", "D", "G", "C", "F#" ] },
-        { "type": "circle", "title": "Relative major and minor", "modes": [ "relMinor", "relMajor" ] },
-        { "type": "spellScale", "title": "Spell harmonic minor scales", "scale": "harmonicMinor", "roots": [ "A", "E", "D", "G", "C", "B" ] },
-        { "type": "earScale", "title": "Ear: major, natural or harmonic minor?", "set": [ "major", "naturalMinor", "harmonicMinor" ] },
-        { "type": "nameKeySig", "title": "Name the minor key", "lo": -4, "hi": 4, "minor": true },
-        { "type": "playScale", "title": "Play natural minor scales", "scale": "naturalMinor", "roots": [ "A", "E", "D", "G", "B" ] }
+        {
+          "type": "spellScale",
+          "title": "Spell natural minor scales",
+          "scale": "naturalMinor",
+          "roots": [
+            "A",
+            "E",
+            "B",
+            "D",
+            "G",
+            "C",
+            "F#"
+          ]
+        },
+        {
+          "type": "circle",
+          "title": "Relative major and minor",
+          "modes": [
+            "relMinor",
+            "relMajor"
+          ]
+        },
+        {
+          "type": "spellScale",
+          "title": "Spell harmonic minor scales",
+          "scale": "harmonicMinor",
+          "roots": [
+            "A",
+            "E",
+            "D",
+            "G",
+            "C",
+            "B"
+          ]
+        },
+        {
+          "type": "earScale",
+          "title": "Ear: major, natural or harmonic minor?",
+          "set": [
+            "major",
+            "naturalMinor",
+            "harmonicMinor"
+          ]
+        },
+        {
+          "type": "nameKeySig",
+          "title": "Name the minor key",
+          "lo": -4,
+          "hi": 4,
+          "minor": true
+        },
+        {
+          "type": "playScale",
+          "title": "Play natural minor scales",
+          "scale": "naturalMinor",
+          "roots": [
+            "A",
+            "E",
+            "D",
+            "G",
+            "B"
+          ]
+        }
       ]
     },
     {
@@ -222,14 +569,91 @@
         "## By ear",
         "Major sounds bright and stable, minor darker. Diminished is tense and wants to move. Augmented sounds unresolved and dreamy, as if it is floating."
       ],
-      "diagram": { "chords": [ [ "C3", "E3", "G3" ], [ "C3", "Eb3", "G3" ], [ "C3", "Eb3", "Gb3" ], [ "C3", "E3", "G#3" ] ], "labels": [ "C", "Cm", "C°", "C+" ] },
+      "diagram": {
+        "chords": [
+          [
+            "C3",
+            "E3",
+            "G3"
+          ],
+          [
+            "C3",
+            "Eb3",
+            "G3"
+          ],
+          [
+            "C3",
+            "Eb3",
+            "Gb3"
+          ],
+          [
+            "C3",
+            "E3",
+            "G#3"
+          ]
+        ],
+        "labels": [
+          "C",
+          "Cm",
+          "C°",
+          "C+"
+        ]
+      },
       "exercises": [
-        { "type": "spellTriad", "title": "Spell major and minor triads", "set": [ "major", "minor" ] },
-        { "type": "triadQuality", "title": "Name the triad on the staff", "set": [ "major", "minor", "diminished", "augmented" ] },
-        { "type": "spellTriad", "title": "Spell all four kinds", "set": [ "major", "minor", "diminished", "augmented" ] },
-        { "type": "earTriad", "title": "Ear: major or minor?", "set": [ "major", "minor" ] },
-        { "type": "earTriad", "title": "Ear: all four kinds", "set": [ "major", "minor", "diminished", "augmented" ] },
-        { "type": "playTriad", "title": "Play the triad, note by note", "set": [ "major", "minor" ] }
+        {
+          "type": "spellTriad",
+          "title": "Spell major and minor triads",
+          "set": [
+            "major",
+            "minor"
+          ]
+        },
+        {
+          "type": "triadQuality",
+          "title": "Name the triad on the staff",
+          "set": [
+            "major",
+            "minor",
+            "diminished",
+            "augmented"
+          ]
+        },
+        {
+          "type": "spellTriad",
+          "title": "Spell all four kinds",
+          "set": [
+            "major",
+            "minor",
+            "diminished",
+            "augmented"
+          ]
+        },
+        {
+          "type": "earTriad",
+          "title": "Ear: major or minor?",
+          "set": [
+            "major",
+            "minor"
+          ]
+        },
+        {
+          "type": "earTriad",
+          "title": "Ear: all four kinds",
+          "set": [
+            "major",
+            "minor",
+            "diminished",
+            "augmented"
+          ]
+        },
+        {
+          "type": "playTriad",
+          "title": "Play the triad, note by note",
+          "set": [
+            "major",
+            "minor"
+          ]
+        }
       ]
     },
     {
@@ -251,12 +675,55 @@
         "## How to practise",
         "Pick a chord. Find its three shapes on strings 1-2-3 from the lowest fret up and say the bass note of each: the root, the 3rd or the 5th. Then change major to minor by lowering the 3rd one fret, wherever it is."
       ],
-      "diagram": { "triadShapes": { "root": "C", "type": "major", "top": 1 } },
+      "diagram": {
+        "triadShapes": {
+          "root": "C",
+          "type": "major",
+          "top": 1
+        }
+      },
       "exercises": [
-        { "type": "inversionName", "title": "Which inversion? (staff)", "set": [ "major", "minor" ] },
-        { "type": "triadShape", "title": "Name the shape: strings 1-2-3", "set": [ "major", "minor" ], "topStrings": [ 1 ] },
-        { "type": "triadShape", "title": "Name the shape: strings 2-3-4 and 3-4-5", "set": [ "major", "minor" ], "topStrings": [ 2, 3 ] },
-        { "type": "inversionName", "title": "Inversions of all four kinds", "set": [ "major", "minor", "diminished", "augmented" ] }
+        {
+          "type": "inversionName",
+          "title": "Which inversion? (staff)",
+          "set": [
+            "major",
+            "minor"
+          ]
+        },
+        {
+          "type": "triadShape",
+          "title": "Name the shape: strings 1-2-3",
+          "set": [
+            "major",
+            "minor"
+          ],
+          "topStrings": [
+            1
+          ]
+        },
+        {
+          "type": "triadShape",
+          "title": "Name the shape: strings 2-3-4 and 3-4-5",
+          "set": [
+            "major",
+            "minor"
+          ],
+          "topStrings": [
+            2,
+            3
+          ]
+        },
+        {
+          "type": "inversionName",
+          "title": "Inversions of all four kinds",
+          "set": [
+            "major",
+            "minor",
+            "diminished",
+            "augmented"
+          ]
+        }
       ]
     },
     {
@@ -280,11 +747,596 @@
         "## How to practise",
         "Name the shape before you name the notes. Then play each interval from a root on every string, saying its name and its size: \"perfect 5th, 7 semitones, 3½ tones\"."
       ],
-      "diagram": { "intervals": "A2" },
+      "diagram": {
+        "intervals": "A2"
+      },
       "exercises": [
-        { "type": "intervalShape", "title": "Name the shape: 3rds, 4ths, 5ths, octaves", "set": [ "m3", "M3", "P4", "P5", "P8" ] },
-        { "type": "intervalShape", "title": "Name the shape: all intervals", "set": [ "m2", "M2", "m3", "M3", "P4", "A4", "P5", "m6", "M6", "m7", "M7", "P8" ] },
-        { "type": "playInterval", "title": "Play the interval from any root", "set": [ "m3", "M3", "P4", "P5", "M6", "m7", "P8" ] }
+        {
+          "type": "intervalShape",
+          "title": "Name the shape: 3rds, 4ths, 5ths, octaves",
+          "set": [
+            "m3",
+            "M3",
+            "P4",
+            "P5",
+            "P8"
+          ]
+        },
+        {
+          "type": "intervalShape",
+          "title": "Name the shape: all intervals",
+          "set": [
+            "m2",
+            "M2",
+            "m3",
+            "M3",
+            "P4",
+            "A4",
+            "P5",
+            "m6",
+            "M6",
+            "m7",
+            "M7",
+            "P8"
+          ]
+        },
+        {
+          "type": "playInterval",
+          "title": "Play the interval from any root",
+          "set": [
+            "m3",
+            "M3",
+            "P4",
+            "P5",
+            "M6",
+            "m7",
+            "P8"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "L11-sevenths",
+      "level": 3,
+      "strand": "Chords",
+      "title": "Seventh chords",
+      "summary": "Add one more 3rd on top of a triad: the five seventh chords of jazz and blues.",
+      "body": [
+        "## Four notes",
+        "Stack one more 3rd on a triad and you get a seventh chord: root, 3rd, 5th and 7th. Almost every chord in jazz, and in Gleason's book, is a seventh chord.",
+        "## The five types",
+        "- Major 7th (Cmaj7): major triad + major 7th. C E G B. Smooth and dreamy.",
+        "- Dominant 7th (C7): major triad + minor 7th. C E G B♭. Bluesy and restless; it wants to move.",
+        "- Minor 7th (Cm7): minor triad + minor 7th. C E♭ G B♭. Soft and mellow.",
+        "- Half-diminished (Cm7♭5, also Cø): diminished triad + minor 7th. C E♭ G♭ B♭. Dark, leading somewhere.",
+        "- Diminished 7th (C°7): diminished triad + diminished 7th. C E♭ G♭ B♭♭ (sounds like A). Very tense and symmetrical: every note is a minor 3rd apart.",
+        "## Telling them apart",
+        "Look at the triad first (major, minor or diminished), then the 7th: a major 7th is one fret below the octave, a minor 7th two frets below. Major triad + minor 7th is the dominant, the one used for blues.",
+        "## By ear",
+        "Major 7th has a soft rub between the 7th and the octave. Dominant 7th sounds like the blues. Minor 7th is calm and warm. Half-diminished is darker than minor 7th, as if the floor has dropped a little."
+      ],
+      "diagram": {
+        "chords": [
+          [
+            "C3",
+            "E3",
+            "G3",
+            "B3"
+          ],
+          [
+            "C3",
+            "E3",
+            "G3",
+            "Bb3"
+          ],
+          [
+            "C3",
+            "Eb3",
+            "G3",
+            "Bb3"
+          ],
+          [
+            "C3",
+            "Eb3",
+            "Gb3",
+            "Bb3"
+          ],
+          [
+            "C3",
+            "Eb3",
+            "Gb3",
+            "Bbb3"
+          ]
+        ],
+        "labels": [
+          "Cmaj7",
+          "C7",
+          "Cm7",
+          "Cm7b5",
+          "C°7"
+        ]
+      },
+      "exercises": [
+        {
+          "type": "spellTriad",
+          "title": "Spell maj7, 7 and m7 chords",
+          "set": [
+            "major7",
+            "dominant7",
+            "minor7"
+          ]
+        },
+        {
+          "type": "triadQuality",
+          "title": "Name the seventh chord on the staff",
+          "set": [
+            "major7",
+            "dominant7",
+            "minor7",
+            "halfDiminished",
+            "diminished7"
+          ]
+        },
+        {
+          "type": "earTriad",
+          "title": "Ear: maj7, 7 or m7?",
+          "set": [
+            "major7",
+            "dominant7",
+            "minor7"
+          ]
+        },
+        {
+          "type": "spellTriad",
+          "title": "Spell all but the diminished 7th",
+          "set": [
+            "major7",
+            "dominant7",
+            "minor7",
+            "halfDiminished"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "L12-diatonic",
+      "level": 3,
+      "strand": "Harmony",
+      "title": "The chords of a key and Roman numerals",
+      "summary": "Build a triad on every note of the major scale and name it by its number.",
+      "body": [
+        "## Chords from the scale",
+        "Build a triad on each note of a major scale, using only notes of that scale: skip one note, take one, skip one, take one. In C: C E G, D F A, E G B, F A C, G B D, A C E, B D F.",
+        "## Always the same pattern",
+        "In every major key the qualities come out in the same order: major, minor, minor, major, major, minor, diminished. Learn this once and you know the chords of all twelve keys.",
+        "## Roman numerals",
+        "Chords are named by the degree they are built on, in Roman numerals: capitals for major, lower case for minor, a small circle for diminished.",
+        "- I ii iii IV V vi vii°",
+        "- In C: C Dm Em F G Am B°",
+        "- In G: G Am Bm C D Em F♯°",
+        "This is the thinking in numbers that runs all the way through Gleason's book: a song that goes I vi IV V is the same song in any key.",
+        "## On the guitar",
+        "Play the seven chords of G major with open and barre chords, saying the numerals out loud: one, two minor, three minor, four, five, six minor. Leave out the vii° for now; it is mostly used as a seventh chord or as part of the V7."
+      ],
+      "diagram": {
+        "chords": [
+          [
+            "C3",
+            "E3",
+            "G3"
+          ],
+          [
+            "D3",
+            "F3",
+            "A3"
+          ],
+          [
+            "E3",
+            "G3",
+            "B3"
+          ],
+          [
+            "F3",
+            "A3",
+            "C4"
+          ],
+          [
+            "G3",
+            "B3",
+            "D4"
+          ],
+          [
+            "A3",
+            "C4",
+            "E4"
+          ],
+          [
+            "B3",
+            "D4",
+            "F4"
+          ]
+        ],
+        "labels": [
+          "I",
+          "ii",
+          "iii",
+          "IV",
+          "V",
+          "vi",
+          "vii°"
+        ]
+      },
+      "exercises": [
+        {
+          "type": "diatonicChord",
+          "title": "Chords of C, G and F",
+          "roots": [
+            "C",
+            "G",
+            "F"
+          ]
+        },
+        {
+          "type": "diatonicChord",
+          "title": "Chords of all common keys",
+          "roots": [
+            "C",
+            "G",
+            "D",
+            "A",
+            "E",
+            "F",
+            "Bb",
+            "Eb"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "L13-function",
+      "level": 3,
+      "strand": "Harmony",
+      "title": "Diatonic seventh chords and what they do",
+      "summary": "The seven 7th chords of a key, and the three jobs a chord can do.",
+      "body": [
+        "## Seventh chords from the scale",
+        "Stack one more 3rd and each chord of the key becomes a seventh chord. The pattern is again the same in every key:",
+        "- Imaj7  IIm7  IIIm7  IVmaj7  V7  VIm7  VIIm7♭5",
+        "- In C: Cmaj7 Dm7 Em7 Fmaj7 G7 Am7 Bm7♭5",
+        "Only one chord of the key is a dominant 7th: the V7. That is why a dominant 7th tells the ear where home is. (The blues breaks this rule on purpose and makes every chord a dominant.)",
+        "## Three jobs",
+        "- Tonic (home, at rest): I, and also iii and vi, which share two notes with it.",
+        "- Subdominant (moving away): IV and ii.",
+        "- Dominant (tension that wants to go home): V and vii. They contain the 7th degree of the scale, which pulls up to the root, and the tritone between the 4th and the 7th.",
+        "Most music moves tonic, subdominant, dominant, tonic: away from home, a build-up of tension, and back.",
+        "## Hearing it",
+        "Play I, IV, V7 and stop. The music feels unfinished. Play the I again and it resolves. That pull of V7 to I is the strongest force in Western harmony."
+      ],
+      "diagram": {
+        "chords": [
+          [
+            "C3",
+            "E3",
+            "G3",
+            "B3"
+          ],
+          [
+            "D3",
+            "F3",
+            "A3",
+            "C4"
+          ],
+          [
+            "E3",
+            "G3",
+            "B3",
+            "D4"
+          ],
+          [
+            "F3",
+            "A3",
+            "C4",
+            "E4"
+          ],
+          [
+            "G3",
+            "B3",
+            "D4",
+            "F4"
+          ],
+          [
+            "A3",
+            "C4",
+            "E4",
+            "G4"
+          ],
+          [
+            "B3",
+            "D4",
+            "F4",
+            "A4"
+          ]
+        ],
+        "labels": [
+          "Imaj7",
+          "IIm7",
+          "IIIm7",
+          "IVmaj7",
+          "V7",
+          "VIm7",
+          "VIIm7b5"
+        ]
+      },
+      "exercises": [
+        {
+          "type": "diatonicChord",
+          "title": "Seventh chords of the key",
+          "sevenths": true,
+          "roots": [
+            "C",
+            "G",
+            "D",
+            "F",
+            "Bb",
+            "A",
+            "Eb"
+          ]
+        },
+        {
+          "type": "chordFunction",
+          "title": "Tonic, subdominant or dominant?",
+          "sevenths": true
+        },
+        {
+          "type": "earTriad",
+          "title": "Ear: all four diatonic 7th chord types",
+          "set": [
+            "major7",
+            "dominant7",
+            "minor7",
+            "halfDiminished"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "L14-progressions",
+      "level": 3,
+      "strand": "Harmony",
+      "title": "Progressions and the II-V-I",
+      "summary": "The chord sequences behind thousands of songs, and the most important one in jazz.",
+      "body": [
+        "## Progressions by number",
+        "A chord progression is a sequence of chords. Written in numerals it fits every key.",
+        "- I IV V I: folk, rock and roll, country.",
+        "- I vi IV V: the 1950s doo-wop progression.",
+        "- I V vi IV: a huge number of pop songs.",
+        "- vi IV I V: the same chords starting from the minor one.",
+        "## II-V-I",
+        "IIm7 V7 Imaj7 is the backbone of jazz. The roots move up a 4th each time (D to G to C in C major), the strongest root movement there is. Gleason's harmony chapters, and most jazz standards, are built from chains of II-V-Is in different keys.",
+        "## Guide tones",
+        "In a II-V-I the 7th of each chord moves down a half step to the 3rd of the next: C (7th of Dm7) to B (3rd of G7), F (7th of G7) to E (3rd of Cmaj7). Play only those notes and you can hear the whole progression in two voices.",
+        "## By ear",
+        "Follow the bass. From the I, a move up a 4th (to IV) sounds open; a move up a 5th (to V) sounds like a question; a move down to the vi sounds like a sigh into minor."
+      ],
+      "diagram": {
+        "chords": [
+          [
+            "D3",
+            "F3",
+            "A3",
+            "C4"
+          ],
+          [
+            "G3",
+            "B3",
+            "D4",
+            "F4"
+          ],
+          [
+            "C3",
+            "E3",
+            "G3",
+            "B3"
+          ]
+        ],
+        "labels": [
+          "IIm7 Dm7",
+          "V7 G7",
+          "Imaj7 Cmaj7"
+        ]
+      },
+      "exercises": [
+        {
+          "type": "progressionName",
+          "title": "Name the progression (triads)"
+        },
+        {
+          "type": "progressionName",
+          "title": "Name the progression (7th chords)",
+          "sevenths": true
+        },
+        {
+          "type": "earProgression",
+          "title": "Ear: which progression?"
+        },
+        {
+          "type": "earProgression",
+          "title": "Ear: II-V-I and friends",
+          "sevenths": true
+        }
+      ]
+    },
+    {
+      "id": "L15-rhythm",
+      "level": 3,
+      "strand": "Rhythm",
+      "title": "Reading rhythm",
+      "summary": "Note values, counting out loud, dotted notes and syncopation, tapped in time.",
+      "body": [
+        "## Note values",
+        "In 4/4 time there are four beats in a bar and a quarter note lasts one beat. A half note lasts 2, a whole note 4, an eighth note ½ and a sixteenth ¼. Rests are silences of the same lengths.",
+        "## Counting",
+        "Count the beats as numbers and the halves of each beat as \"and\": 1 & 2 & 3 & 4 &. Eighth notes fall on numbers and ands; quarter notes only on numbers. Always count out loud, at least in your head, while you read.",
+        "## Dots and syncopation",
+        "- A dot adds half the value again: a dotted half is 3 beats, a dotted quarter 1½. A dotted quarter followed by an eighth is a very common pattern: 1 - - & .",
+        "- Syncopation puts notes on the ands instead of the beats. Eighth, quarter, eighth is counted 1 & - &: the middle note starts on the \"and\" of 1 and lasts across beat 2.",
+        "## How to tap",
+        "Press Start: you hear four clicks, then the click goes on through the rhythm. Tap each note as it starts, with the pad, the Space bar, or by strumming muted strings on the guitar (the app hears the attack). Only the start of each note matters; how long it lasts does not."
+      ],
+      "diagram": {
+        "rhythm": [
+          [
+            0,
+            1
+          ],
+          [
+            1,
+            0.5
+          ],
+          [
+            1.5,
+            0.5
+          ],
+          [
+            2,
+            2
+          ],
+          [
+            4,
+            1.5
+          ],
+          [
+            5.5,
+            0.5
+          ],
+          [
+            6,
+            0.5
+          ],
+          [
+            6.5,
+            1
+          ],
+          [
+            7.5,
+            0.5
+          ]
+        ],
+        "beats": 8
+      },
+      "exercises": [
+        {
+          "type": "rhythmValue",
+          "title": "How long is this note?"
+        },
+        {
+          "type": "tapRhythm",
+          "title": "Tap: quarters, eighths and rests",
+          "level": 1
+        },
+        {
+          "type": "tapRhythm",
+          "title": "Tap: dotted notes and syncopation",
+          "level": 2
+        }
+      ]
+    },
+    {
+      "id": "L16-cells",
+      "level": 3,
+      "strand": "Rhythm",
+      "title": "Sixteenths, triplets and rhythm cells",
+      "summary": "Split the beat in three or four, and learn the cells as words you can say and play.",
+      "body": [
+        "## Three or four pulses",
+        "Every beat can be split into four sixteenths (1 e & a) or into three triplet eighths (1 trip let). Playing some of those pulses and not others gives a small rhythm cell. Most rhythms are just cells strung together, so learn them as units, like words.",
+        "## Three-pulse cells",
+        "- Triplet: all three (1 trip let).",
+        "- Swing: the first and the last (1 - let). This is the shuffle and swing feel.",
+        "- Afro-Cuban: the first two (1 trip -).",
+        "- Waltz: the last two (- trip let).",
+        "These four names come from Gleason's book, which calls rhythm cells rhythmic words.",
+        "## Four-pulse cells",
+        "- All four (1 e & a): four sixteenths.",
+        "- 1 - & -: two eighths.",
+        "- 1 - & a: an eighth and two sixteenths.",
+        "- 1 e & -: two sixteenths and an eighth.",
+        "- 1 - - a: a dotted eighth and a sixteenth.",
+        "Gleason gives the four-pulse cells names too (gallop, jingle bells, Creedence and others). When you reach his rhythmic words chapter, match each of his names to one of these syllable patterns.",
+        "## How to practise",
+        "Gleason's method: strum the cell in the air while you say it, then clap it while counting, then play it on one note. Say the syllables out loud every time."
+      ],
+      "diagram": {
+        "rhythm": [
+          [
+            0,
+            0.25
+          ],
+          [
+            0.25,
+            0.25
+          ],
+          [
+            0.5,
+            0.25
+          ],
+          [
+            0.75,
+            0.25
+          ],
+          [
+            1,
+            0.5
+          ],
+          [
+            1.5,
+            0.25
+          ],
+          [
+            1.75,
+            0.25
+          ],
+          [
+            2,
+            0.75
+          ],
+          [
+            2.75,
+            0.25
+          ],
+          [
+            3,
+            0.333
+          ],
+          [
+            3.333,
+            0.333
+          ],
+          [
+            3.667,
+            0.333
+          ]
+        ],
+        "beats": 4
+      },
+      "exercises": [
+        {
+          "type": "earCell",
+          "title": "Ear: three-pulse cells",
+          "pulses": 3
+        },
+        {
+          "type": "earCell",
+          "title": "Ear: four-pulse cells",
+          "pulses": 4
+        },
+        {
+          "type": "tapRhythm",
+          "title": "Tap: sixteenths and triplets",
+          "level": 3,
+          "beats": 4
+        }
       ]
     },
     {
@@ -308,12 +1360,59 @@
         "## Listen for it",
         "Put on any blues and count the bars out loud. The change to the IV in bar 5 is easy to hear: the bass goes up a 4th and the music opens up. The V in bar 9 is the most tense moment of the chorus."
       ],
-      "diagram": { "bluesChart": "standard", "key": "A" },
+      "diagram": {
+        "bluesChart": "standard",
+        "key": "A"
+      },
       "exercises": [
-        { "type": "bluesChart", "title": "Which chord is in that bar?", "forms": [ "standard" ], "roots": [ "A", "E" ] },
-        { "type": "bluesNumbers", "title": "I, IV and V in any key", "forms": [ "standard" ], "roots": [ "A", "E", "G", "C", "D", "F", "Bb" ] },
-        { "type": "spellTriad", "title": "Spell dominant 7th chords", "set": [ "dominant7" ], "roots": [ "A", "D", "E", "G", "C", "B", "F", "Bb" ] },
-        { "type": "earBluesChange", "title": "Ear: I to IV or I to V?" }
+        {
+          "type": "bluesChart",
+          "title": "Which chord is in that bar?",
+          "forms": [
+            "standard"
+          ],
+          "roots": [
+            "A",
+            "E"
+          ]
+        },
+        {
+          "type": "bluesNumbers",
+          "title": "I, IV and V in any key",
+          "forms": [
+            "standard"
+          ],
+          "roots": [
+            "A",
+            "E",
+            "G",
+            "C",
+            "D",
+            "F",
+            "Bb"
+          ]
+        },
+        {
+          "type": "spellTriad",
+          "title": "Spell dominant 7th chords",
+          "set": [
+            "dominant7"
+          ],
+          "roots": [
+            "A",
+            "D",
+            "E",
+            "G",
+            "C",
+            "B",
+            "F",
+            "Bb"
+          ]
+        },
+        {
+          "type": "earBluesChange",
+          "title": "Ear: I to IV or I to V?"
+        }
       ]
     },
     {
@@ -335,10 +1434,29 @@
         "## How to practise",
         "In the Backing tracks tab, play the same 12 bars in each feel, at a slow tempo, and just play the root of each chord in time. Then play one lick over each feel and hear how its rhythm has to change."
       ],
-      "diagram": { "bluesChart": "standard", "key": "E" },
+      "diagram": {
+        "bluesChart": "standard",
+        "key": "E"
+      },
       "exercises": [
-        { "type": "earFeel", "title": "Ear: shuffle or straight?", "feels": [ 0, 1 ] },
-        { "type": "earFeel", "title": "Ear: all four feels", "feels": [ 0, 1, 2, 3 ] }
+        {
+          "type": "earFeel",
+          "title": "Ear: shuffle or straight?",
+          "feels": [
+            0,
+            1
+          ]
+        },
+        {
+          "type": "earFeel",
+          "title": "Ear: all four feels",
+          "feels": [
+            0,
+            1,
+            2,
+            3
+          ]
+        }
       ]
     },
     {
@@ -363,11 +1481,54 @@
         "## How to practise",
         "Play the box up and down with the metronome (Practice > Scales, minor pentatonic, Box 1). Say the degree of each note out loud. Then improvise over a backing track using only the 4th and 3rd strings: four notes are enough to make music."
       ],
-      "diagram": { "box": { "root": "A", "scale": "minorPentatonic", "index": 0 } },
+      "diagram": {
+        "box": {
+          "root": "A",
+          "scale": "minorPentatonic",
+          "index": 0
+        }
+      },
       "exercises": [
-        { "type": "spellScale", "title": "Spell minor pentatonic scales", "scale": "minorPentatonic", "roots": [ "A", "E", "D", "G", "C", "B" ] },
-        { "type": "boxDegree", "title": "Degrees in box 1", "scale": "minorPentatonic", "boxes": [ 0 ], "roots": [ "A", "E", "G", "C", "D" ] },
-        { "type": "playScale", "title": "Play the scale", "scale": "minorPentatonic", "roots": [ "A", "E", "G", "C", "D" ] }
+        {
+          "type": "spellScale",
+          "title": "Spell minor pentatonic scales",
+          "scale": "minorPentatonic",
+          "roots": [
+            "A",
+            "E",
+            "D",
+            "G",
+            "C",
+            "B"
+          ]
+        },
+        {
+          "type": "boxDegree",
+          "title": "Degrees in box 1",
+          "scale": "minorPentatonic",
+          "boxes": [
+            0
+          ],
+          "roots": [
+            "A",
+            "E",
+            "G",
+            "C",
+            "D"
+          ]
+        },
+        {
+          "type": "playScale",
+          "title": "Play the scale",
+          "scale": "minorPentatonic",
+          "roots": [
+            "A",
+            "E",
+            "G",
+            "C",
+            "D"
+          ]
+        }
       ]
     },
     {
@@ -387,11 +1548,46 @@
         "## Blue notes in general",
         "Singers and guitarists bend many notes a little: the ♭3 towards the 3, the ♭7 towards the 7, the ♭5 towards the 5. These in-between pitches are what makes blues sound vocal. Lesson 6 covers bends."
       ],
-      "diagram": { "box": { "root": "A", "scale": "blues", "index": 0 } },
+      "diagram": {
+        "box": {
+          "root": "A",
+          "scale": "blues",
+          "index": 0
+        }
+      },
       "exercises": [
-        { "type": "spellScale", "title": "Spell blues scales", "scale": "blues", "roots": [ "A", "E", "D", "G", "C" ] },
-        { "type": "earScale", "title": "Ear: minor pentatonic or blues scale?", "set": [ "minorPentatonic", "blues" ] },
-        { "type": "playScale", "title": "Play the blues scale", "scale": "blues", "roots": [ "A", "E", "G", "C", "D" ] }
+        {
+          "type": "spellScale",
+          "title": "Spell blues scales",
+          "scale": "blues",
+          "roots": [
+            "A",
+            "E",
+            "D",
+            "G",
+            "C"
+          ]
+        },
+        {
+          "type": "earScale",
+          "title": "Ear: minor pentatonic or blues scale?",
+          "set": [
+            "minorPentatonic",
+            "blues"
+          ]
+        },
+        {
+          "type": "playScale",
+          "title": "Play the blues scale",
+          "scale": "blues",
+          "roots": [
+            "A",
+            "E",
+            "G",
+            "C",
+            "D"
+          ]
+        }
       ]
     },
     {
@@ -411,11 +1607,48 @@
         "## Same shapes, other keys",
         "The boxes never change shape. Moving to another key just slides them all up or down the neck: in A box 1 is at fret 5, in C at fret 8, in E at fret 0 or 12."
       ],
-      "diagram": { "boxes": { "root": "A", "scale": "minorPentatonic" } },
+      "diagram": {
+        "boxes": {
+          "root": "A",
+          "scale": "minorPentatonic"
+        }
+      },
       "exercises": [
-        { "type": "boxDegree", "title": "Degrees in all five boxes", "scale": "minorPentatonic", "roots": [ "A", "E", "G", "C", "D" ] },
-        { "type": "boxDegree", "title": "Degrees in the blues scale boxes", "scale": "blues", "roots": [ "A", "E", "G" ] },
-        { "type": "playScale", "title": "Play the scale in any box", "scale": "minorPentatonic", "roots": [ "A", "C", "D", "G", "B", "F" ] }
+        {
+          "type": "boxDegree",
+          "title": "Degrees in all five boxes",
+          "scale": "minorPentatonic",
+          "roots": [
+            "A",
+            "E",
+            "G",
+            "C",
+            "D"
+          ]
+        },
+        {
+          "type": "boxDegree",
+          "title": "Degrees in the blues scale boxes",
+          "scale": "blues",
+          "roots": [
+            "A",
+            "E",
+            "G"
+          ]
+        },
+        {
+          "type": "playScale",
+          "title": "Play the scale in any box",
+          "scale": "minorPentatonic",
+          "roots": [
+            "A",
+            "C",
+            "D",
+            "G",
+            "B",
+            "F"
+          ]
+        }
       ]
     },
     {
@@ -439,10 +1672,34 @@
         "## Learn licks",
         "The Licks tab has phrases in notation, tab and on the neck. Learn one, play it in every key, then change its rhythm and its last note. A lick you can vary is worth ten you can only copy."
       ],
-      "diagram": { "box": { "root": "A", "scale": "minorPentatonic", "index": 0 } },
+      "diagram": {
+        "box": {
+          "root": "A",
+          "scale": "minorPentatonic",
+          "index": 0
+        }
+      },
       "exercises": [
-        { "type": "bendTarget", "title": "Where does the bend go?", "roots": [ "A", "E", "G", "C", "D" ] },
-        { "type": "playBend", "title": "Play the bend in tune", "roots": [ "A", "G", "C" ] }
+        {
+          "type": "bendTarget",
+          "title": "Where does the bend go?",
+          "roots": [
+            "A",
+            "E",
+            "G",
+            "C",
+            "D"
+          ]
+        },
+        {
+          "type": "playBend",
+          "title": "Play the bend in tune",
+          "roots": [
+            "A",
+            "G",
+            "C"
+          ]
+        }
       ]
     },
     {
@@ -462,11 +1719,46 @@
         "## Listen for it",
         "Major pentatonic phrases sound like they are smiling; minor pentatonic phrases sound like they are complaining. Most great blues players move between the two inside one solo."
       ],
-      "diagram": { "box": { "root": "A", "scale": "majorPentatonic", "index": 0 } },
+      "diagram": {
+        "box": {
+          "root": "A",
+          "scale": "majorPentatonic",
+          "index": 0
+        }
+      },
       "exercises": [
-        { "type": "spellScale", "title": "Spell major pentatonic scales", "scale": "majorPentatonic", "roots": [ "A", "E", "G", "C", "D", "F" ] },
-        { "type": "earScale", "title": "Ear: major or minor pentatonic?", "set": [ "majorPentatonic", "minorPentatonic" ] },
-        { "type": "boxDegree", "title": "Degrees in the major pentatonic boxes", "scale": "majorPentatonic", "roots": [ "A", "E", "G", "C" ] }
+        {
+          "type": "spellScale",
+          "title": "Spell major pentatonic scales",
+          "scale": "majorPentatonic",
+          "roots": [
+            "A",
+            "E",
+            "G",
+            "C",
+            "D",
+            "F"
+          ]
+        },
+        {
+          "type": "earScale",
+          "title": "Ear: major or minor pentatonic?",
+          "set": [
+            "majorPentatonic",
+            "minorPentatonic"
+          ]
+        },
+        {
+          "type": "boxDegree",
+          "title": "Degrees in the major pentatonic boxes",
+          "scale": "majorPentatonic",
+          "roots": [
+            "A",
+            "E",
+            "G",
+            "C"
+          ]
+        }
       ]
     },
     {
@@ -487,11 +1779,62 @@
         "## How to practise",
         "Play a backing track and only play the 3rd of each chord, on beat 1 of every bar. Then the 7th. Then join them with a few pentatonic notes in between."
       ],
-      "diagram": { "scale": { "root": "A3", "type": "mixolydian" } },
+      "diagram": {
+        "scale": {
+          "root": "A3",
+          "type": "mixolydian"
+        }
+      },
       "exercises": [
-        { "type": "chordTone", "title": "Chord tones of I, IV and V", "forms": [ "standard" ], "roots": [ "A", "E", "G", "C", "D", "F" ] },
-        { "type": "spellScale", "title": "Spell Mixolydian scales", "scale": "mixolydian", "roots": [ "A", "D", "E", "G", "C", "F" ] },
-        { "type": "spellTriad", "title": "Spell all 7th chords of the blues", "set": [ "dominant7" ], "roots": [ "C", "Db", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B" ] }
+        {
+          "type": "chordTone",
+          "title": "Chord tones of I, IV and V",
+          "forms": [
+            "standard"
+          ],
+          "roots": [
+            "A",
+            "E",
+            "G",
+            "C",
+            "D",
+            "F"
+          ]
+        },
+        {
+          "type": "spellScale",
+          "title": "Spell Mixolydian scales",
+          "scale": "mixolydian",
+          "roots": [
+            "A",
+            "D",
+            "E",
+            "G",
+            "C",
+            "F"
+          ]
+        },
+        {
+          "type": "spellTriad",
+          "title": "Spell all 7th chords of the blues",
+          "set": [
+            "dominant7"
+          ],
+          "roots": [
+            "C",
+            "Db",
+            "D",
+            "Eb",
+            "E",
+            "F",
+            "F#",
+            "G",
+            "Ab",
+            "A",
+            "Bb",
+            "B"
+          ]
+        }
       ]
     },
     {
@@ -510,12 +1853,64 @@
         "Jazz players keep the 12-bar outline but add more chords: a II-V into the IV in bar 4, a diminished chord in bar 6, the VI7 in bar 8 leading to a II-V in bars 9-10, and a turnaround in bars 11-12. In F: F7 B♭7 F7 Cm7-F7 | B♭7 B°7 F7 D7 | Gm7 C7 F7-D7 Gm7-C7.",
         "This is exactly the harmony Gleason's book works with, so you will meet the jazz blues again in Level 4. For now, hear how the chords move and try targeting the 3rd of each one."
       ],
-      "diagram": { "bluesChart": "jazz", "key": "F" },
+      "diagram": {
+        "bluesChart": "jazz",
+        "key": "F"
+      },
       "exercises": [
-        { "type": "bluesChart", "title": "Quick change: which chord?", "forms": [ "quickChange" ], "roots": [ "A", "E", "G", "C" ] },
-        { "type": "bluesChart", "title": "Minor blues: which chord?", "forms": [ "minor" ], "roots": [ "A", "E", "D", "G", "C" ] },
-        { "type": "bluesNumbers", "title": "Jazz blues numbers", "forms": [ "jazz" ], "roots": [ "F", "Bb", "C", "G" ] },
-        { "type": "chordTone", "title": "Chord tones of the minor blues", "forms": [ "minor" ], "roots": [ "A", "E", "D", "G" ] }
+        {
+          "type": "bluesChart",
+          "title": "Quick change: which chord?",
+          "forms": [
+            "quickChange"
+          ],
+          "roots": [
+            "A",
+            "E",
+            "G",
+            "C"
+          ]
+        },
+        {
+          "type": "bluesChart",
+          "title": "Minor blues: which chord?",
+          "forms": [
+            "minor"
+          ],
+          "roots": [
+            "A",
+            "E",
+            "D",
+            "G",
+            "C"
+          ]
+        },
+        {
+          "type": "bluesNumbers",
+          "title": "Jazz blues numbers",
+          "forms": [
+            "jazz"
+          ],
+          "roots": [
+            "F",
+            "Bb",
+            "C",
+            "G"
+          ]
+        },
+        {
+          "type": "chordTone",
+          "title": "Chord tones of the minor blues",
+          "forms": [
+            "minor"
+          ],
+          "roots": [
+            "A",
+            "E",
+            "D",
+            "G"
+          ]
+        }
       ]
     }
   ]

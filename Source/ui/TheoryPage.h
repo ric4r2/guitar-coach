@@ -17,6 +17,7 @@ public:
 
     void notePlayed (const NoteEvent& e) override;
     void pitchChanged (const PitchFrame& f) override;
+    void onsetDetected (double t) override { if (exercise.isVisible()) exercise.onsetDetected (t); }
 
     void paint (juce::Graphics&) override;
     void resized() override;

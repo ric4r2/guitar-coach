@@ -7,6 +7,7 @@
 #include "core/Fingerings.h"
 #include "core/BackingTrack.h"
 #include "core/Licks.h"
+#include "core/Rhythm.h"
 #include <cstdio>
 #include <set>
 
@@ -58,7 +59,7 @@ static void testTheory()
 static void testLessons()
 {
     const auto lessons = loadLessons();
-    CHECK (lessons.size() == 19, "19 lessons, got %d", (int) lessons.size());
+    CHECK (lessons.size() == 25, "25 lessons, got %d", (int) lessons.size());
     int blues = 0;
     for (auto& l : lessons) blues += l.track == "blues" ? 1 : 0;
     CHECK (blues == 9, "9 blues lessons (%d)", blues);
@@ -104,16 +105,24 @@ static void testLessons()
                     for (size_t k = 1; k < q.sequence.size(); ++k)
                         CHECK (q.sequence[k].midi() > q.sequence[k - 1].midi(), "%s: ascending", what);
                 }
+                if (q.tapRhythm)
+                    CHECK (q.rhythm.size() >= 3 && q.rhythmBeats > 0 && q.listenTimes.size() == q.listenMidi.size() && q.tapBpm > 30, "%s: tap question", what);
+                if (! q.listenChords.empty())
+                    for (auto& c : q.listenChords)
+                        CHECK (c.size() >= 3 && c.front() >= 30 && c.back() <= 84, "%s: chord voicing", what);
+                if (ex.type == "diatonicChord" || ex.type == "progressionName" || ex.type == "chordFunction")
+                    CHECK (q.choices.size() >= 3 && q.choices.size() == juce::StringArray (q.choices).size(), "%s: choices", what);
                 if (q.showKeySignature)
                     CHECK (q.choices[q.correctChoice] == keyName (q.keySignature, (bool) ex.params.getProperty ("minor", false)), "%s: key matches", what);
                 if (ex.type == "countKeySig" || ex.type == "circle" || ex.type == "earScale" || ex.type == "triadQuality" || ex.type == "earTriad")
                     CHECK (q.choices.size() >= 2 && q.choices.size() == juce::StringArray (q.choices).size(), "%s: choices", what);
                 if (ex.type == "triadQuality" || ex.type == "inversionName")
-                    CHECK (q.staffChord && q.staffNotes.size() == 3, "%s: a chord on the staff", what);
+                    CHECK (q.staffChord && q.staffNotes.size() >= 3, "%s: a chord on the staff", what);
                 if (ex.type == "inversionName")
                 {
                     CHECK (q.staffNotes.front().midi() >= 48 - 12 && q.staffNotes.back().midi() <= 69, "%s: fits the staff", what);
-                    auto chordPcs = std::set<int> { q.staffNotes[0].pc(), q.staffNotes[1].pc(), q.staffNotes[2].pc() };
+                    std::set<int> chordPcs;
+                    for (auto& sn : q.staffNotes) chordPcs.insert (sn.pc());
                     CHECK (chordPcs.size() == 3, "%s: three different notes", what);
                 }
                 if (ex.type == "triadShape" || ex.type == "intervalShape")
@@ -598,6 +607,116 @@ static void testLicks()
     CHECK (names (scaleNotes (*parseNote ("A3"), scaleType ("mixolydian"), false)) == "A B C# D E F# G", "A Mixolydian");
 }
 
+static void testHarmony()
+{
+    const auto n = [] (const char* s) { return *parseNote (s); };
+    juce::StringArray cTriads, ebSevenths, gNumerals;
+    for (int d = 0; d < 7; ++d)
+    {
+        const auto c = diatonicChord (n ("C3"), d, false);
+        CHECK (c.type != nullptr, "C major degree %d identified", d);
+        if (c.type != nullptr) cTriads.add (chordSymbol (c.root, *c.type));
+        const auto e = diatonicChord (n ("Eb3"), d, true);
+        CHECK (e.type != nullptr && e.notes.size() == 4, "Eb major 7th on degree %d", d);
+        if (e.type != nullptr) ebSevenths.add (chordSymbol (e.root, *e.type));
+        const auto g = diatonicChord (n ("G3"), d, false);
+        if (g.type != nullptr) gNumerals.add (romanNumeral (d, *g.type));
+    }
+    const auto deg = juce::String (juce::CharPointer_UTF8 ("\xc2\xb0"));
+    const auto flat = juce::String (juce::CharPointer_UTF8 ("\xe2\x99\xad"));
+    CHECK (cTriads.joinIntoString (" ") == "C Dm Em F G Am B" + deg, "C major triads: %s", cTriads.joinIntoString (" ").toRawUTF8());
+    CHECK (ebSevenths.joinIntoString (" ") == "E" + flat + "maj7 Fm7 Gm7 A" + flat + "maj7 B" + flat + "7 Cm7 Dm7" + flat + "5",
+           "Eb major sevenths: %s", ebSevenths.joinIntoString (" ").toRawUTF8());
+    CHECK (gNumerals.joinIntoString (" ") == "I ii iii IV V vi vii" + deg, "numerals: %s", gNumerals.joinIntoString (" ").toRawUTF8());
+    CHECK (romanNumeral (4, chordType ("dominant7")) == "V7" && romanNumeral (1, chordType ("minor7")) == "IIm7", "seventh numerals");
+    CHECK (harmonicFunction (0) == "tonic" && harmonicFunction (3) == "subdominant" && harmonicFunction (4) == "dominant" && harmonicFunction (5) == "tonic", "functions");
+    CHECK (identifyChord (chordNotes (n ("F#3"), chordType ("halfDiminished"))) == &chordType ("halfDiminished"), "identify half-diminished");
+    for (auto& p : commonProgressions())
+        for (int d : p.degrees)
+            CHECK (d >= 0 && d < 7, "%s degrees", p.name.toRawUTF8());
+}
+
+static void testRhythm()
+{
+    juce::Random rng (9);
+    const std::vector<double> allowed { 0.25, 1.0 / 3.0, 0.5, 0.75, 1.0, 1.5, 2.0 };
+    for (int level = 1; level <= 3; ++level)
+        for (int i = 0; i < 300; ++i)
+        {
+            const auto r = randomRhythm (level, 8, rng);
+            bool ok = ! r.empty() && r.front().beat == 0.0;
+            for (size_t k = 0; k < r.size(); ++k)
+            {
+                ok = ok && r[k].beat + r[k].length <= 8.0 + 1.0e-6;
+                if (k > 0) ok = ok && r[k].beat >= r[k - 1].beat + r[k - 1].length - 1.0e-6;
+                bool known = false;
+                for (auto a : allowed) known = known || std::abs (a - r[k].length) < 0.01;
+                ok = ok && known && (level >= 3 || r[k].length >= 0.5);
+            }
+            CHECK (ok && r.size() >= 4, "random rhythm level %d", level);
+        }
+    for (auto* cells : { &threePulseCells(), &fourPulseCells() })
+        for (auto& c : *cells)
+        {
+            double total = 0;
+            for (auto& e : cellEvents (c, 2.0)) { total += e.length; CHECK (e.beat >= 2.0 && e.beat < 3.0, "%s inside its beat", c.id.toRawUTF8()); }
+            CHECK (std::abs (total + cellEvents (c, 0).front().beat - 1.0) < 1.0e-9, "%s fills the beat", c.id.toRawUTF8());
+        }
+
+    // taps: right but late by any amount scores 1; a missing tap and sloppy taps fail
+    const auto written = randomRhythm (2, 8, rng);
+    std::vector<double> exact, missing, sloppy;
+    juce::Random j (4);
+    for (auto& e : written)
+    {
+        exact.push_back (3.137 + e.beat * 0.75);   // 80 BPM
+        sloppy.push_back (3.0 + (e.beat + (j.nextDouble() - 0.5) * 0.9) * 0.75);
+    }
+    missing = exact;
+    missing.pop_back();
+    CHECK (scoreTaps (written, exact, 80.0).score > 0.99, "exact taps");
+    const auto m = scoreTaps (written, missing, 80.0);
+    CHECK (m.missing == 1 && m.score < 1.0, "a missing tap counts");
+    CHECK (scoreTaps (written, sloppy, 80.0).score < 0.75, "sloppy taps fail: %.2f", scoreTaps (written, sloppy, 80.0).score);
+    CHECK (scoreTaps (written, exact, 100.0).score < 0.75, "right rhythm at the wrong tempo fails");
+
+    // onsets: plucked notes in eighths at 120 BPM, then muted strums (noise bursts)
+    {
+        InputAnalyzer a;
+        a.prepare (48000.0);
+        GuitarVoice v;
+        v.prepare (48000.0);
+        std::vector<float> block (128);
+        int onsets = 0;
+        auto run = [&] (double seconds, bool noise, juce::Random* r)
+        {
+            for (int b = 0; b < (int) (seconds * 48000 / 128); ++b)
+            {
+                std::fill (block.begin(), block.end(), 0.0f);
+                v.render (block.data(), 128);
+                for (auto& x : block) x *= 0.3f;
+                if (noise && r != nullptr && b < 12)
+                    for (auto& x : block) x += (r->nextFloat() - 0.5f) * 0.5f * (1.0f - (float) b / 12.0f);
+                a.push (block.data(), 128);
+                NoteEvent e;
+                bool got = false;
+                while (a.analyze (e, got)) {}
+                double t;
+                while (a.popOnset (t)) ++onsets;
+            }
+        };
+        const int notes[] = { 45, 48, 50, 52, 55, 57, 55, 52 };
+        for (int nn : notes) { v.start (nn, 0.9f, 48000 / 4); run (0.25, false, nullptr); }
+        CHECK (onsets == 8, "8 plucked eighths give %d onsets", onsets);
+        v.release();
+        run (0.5, false, nullptr);
+        onsets = 0;
+        juce::Random r (2);
+        for (int k = 0; k < 6; ++k) run (0.3, true, &r);
+        CHECK (onsets == 6, "6 muted strums give %d onsets", onsets);
+    }
+}
+
 static void testProgress()
 {
     auto file = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("guitarcoach-test-progress.json");
@@ -631,6 +750,8 @@ int main()
     std::printf ("runs\n");      testRunScore();
     std::printf ("backing\n");   testBackingTrack();
     std::printf ("licks\n");     testLicks();
+    std::printf ("harmony\n");   testHarmony();
+    std::printf ("rhythm\n");    testRhythm();
     std::printf ("lessons\n");   testLessons();
     std::printf ("pitch\n");     testPitch();
     std::printf ("progress\n");  testProgress();

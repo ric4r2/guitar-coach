@@ -2,6 +2,7 @@
 #include "BinaryData.h"
 #include "Fingerings.h"
 #include "BackingTrack.h"
+#include "Rhythm.h"
 
 using namespace theory;
 
@@ -692,7 +693,7 @@ Question makeQuestion (const ExerciseSpec& spec, juce::Random& rng)
         {
             root = pickRoot (spec, rng, { "C", "Db", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B" }, 3);
             chord = chordNotes (root, ct);
-        } while (! plainSpelling (chord));
+        } while (! plainSpelling (ct.id == "diminished7" ? std::vector<Note> (chord.begin(), chord.begin() + 3) : chord));
         const auto name = chordName (root, ct);
         juce::String tones;
         for (int i = 0; i < (int) chord.size(); ++i)
@@ -1078,6 +1079,197 @@ Question makeQuestion (const ExerciseSpec& spec, juce::Random& rng)
         return q;
     }
 
+    if (t == "diatonicChord")
+    {
+        const bool sevenths = (bool) spec.params.getProperty ("sevenths", false);
+        const auto key = pickRoot (spec, rng, { "C", "G", "D", "A", "E", "F", "Bb", "Eb" }, 3);
+        std::vector<DiatonicChord> all;
+        for (int d = 0; d < 7; ++d)
+            all.push_back (diatonicChord (key, d, sevenths));
+        const int d = rng.nextInt (7);
+        const auto& c = all[(size_t) d];
+        juce::String list;
+        for (auto& x : all)
+            list << (list.isEmpty() ? "" : "   ") << romanNumeral (x.degree, *x.type) << " " << chordSymbol (x.root, *x.type);
+        q.explanation = romanNumeral (d, *c.type) + " in " + key.name() + " major is " + chordSymbol (c.root, *c.type) + " (" + noteList (c.notes) + "), "
+                      + c.type->name + ". All of them: " + list;
+        q.listenMidi = midis (c.notes);
+        q.listenAsChord = true;
+        q.listenGap = 0.35;
+        const int mode = rng.nextInt (3);
+        if (mode == 0)
+        {
+            q.prompt = "In " + key.name() + " major, which chord is " + romanNumeral (d, *c.type) + "?";
+            for (auto& x : all) q.choices.add (chordSymbol (x.root, *x.type));
+        }
+        else if (mode == 1)
+        {
+            q.prompt = "In " + key.name() + " major, " + chordSymbol (c.root, *c.type) + " is which chord?";
+            for (auto& x : all) q.choices.add (romanNumeral (x.degree, *x.type));
+        }
+        else
+        {
+            q.prompt = "In any major key, what kind of chord is built on the " + ordinal (d + 1) + " degree" + (sevenths ? " (with its 7th)?" : "?");
+            const auto& types = sevenths ? std::vector<juce::String> { "major7", "minor7", "dominant7", "halfDiminished" }
+                                         : std::vector<juce::String> { "major", "minor", "diminished" };
+            for (auto& id : types) q.choices.add (chordType (id).name);
+            q.correctChoice = q.choices.indexOf (c.type->name);
+            q.choiceColumns = q.choices.size();
+            return q;
+        }
+        q.correctChoice = d;
+        q.choiceColumns = 7;
+        return q;
+    }
+
+    if (t == "chordFunction")
+    {
+        const auto key = pickRoot (spec, rng, { "C", "G", "D", "F", "Bb", "A" }, 3);
+        const int d = rng.nextInt (7);
+        const auto c = diatonicChord (key, d, (bool) spec.params.getProperty ("sevenths", true));
+        const auto fn = harmonicFunction (d);
+        q.prompt = "In " + key.name() + " major, what job does " + chordSymbol (c.root, *c.type) + " (" + romanNumeral (d, *c.type) + ") do?";
+        q.choices = { "Tonic (home)", "Subdominant (away)", "Dominant (tension)" };
+        q.correctChoice = fn == "tonic" ? 0 : fn == "subdominant" ? 1 : 2;
+        q.choiceColumns = 3;
+        static const char* why[3] = { "I, iii and vi share most of their notes with the I chord: they feel at rest.",
+                                      "ii and IV move away from home and lead naturally to the dominant.",
+                                      "V and vii contain the 7th degree (the leading tone) and the tritone: they pull back to I." };
+        q.explanation = romanNumeral (d, *c.type) + " is " + fn + ". " + why[q.correctChoice];
+        q.listenMidi = midis (c.notes);
+        q.listenAsChord = true;
+        q.listenGap = 0.35;
+        return q;
+    }
+
+    if (t == "progressionName" || t == "earProgression")
+    {
+        const auto& all = commonProgressions();
+        std::vector<int> pool;
+        const bool wantSevenths = (bool) spec.params.getProperty ("sevenths", false);
+        for (int i = 0; i < (int) all.size(); ++i)
+            if (all[(size_t) i].sevenths == wantSevenths || (bool) spec.params.getProperty ("mixed", false))
+                pool.push_back (i);
+        // four different progressions as choices, one of them right
+        std::vector<int> opts;
+        while (opts.size() < juce::jmin<size_t> (4, pool.size()))
+        {
+            const int o = pool[(size_t) rng.nextInt ((int) pool.size())];
+            if (std::find (opts.begin(), opts.end(), o) == opts.end())
+                opts.push_back (o);
+        }
+        const int which = rng.nextInt ((int) opts.size());
+        const auto& p = all[(size_t) opts[(size_t) which]];
+        const auto key = pickRoot (spec, rng, { "C", "G", "D", "F", "Bb", "A", "E", "Eb" }, 3);
+        juce::StringArray symbols;
+        for (int d : p.degrees)
+        {
+            const auto c = diatonicChord (key, d, p.sevenths);
+            symbols.add (chordSymbol (c.root, *c.type));
+            // voiced around the middle of the guitar, with the root below
+            std::vector<int> v;
+            int bassNote = c.root.midi();
+            while (bassNote > 50) bassNote -= 12;
+            while (bassNote < 40) bassNote += 12;
+            v.push_back (bassNote);
+            for (size_t k = 1; k < c.notes.size(); ++k)
+            {
+                int m = c.notes[k].midi();
+                while (m <= bassNote + 2) m += 12;
+                while (m > bassNote + 19) m -= 12;
+                v.push_back (m);
+            }
+            q.listenChords.push_back (v);
+        }
+        for (int o : opts)
+            q.choices.add (all[(size_t) o].name);
+        q.correctChoice = which;
+        q.choiceColumns = juce::jmin (2, q.choices.size());
+        q.listenGap = 1.1;
+        q.explanation = p.name + " in " + key.name() + ": " + symbols.joinIntoString ("  ") + ".";
+        if (t == "progressionName")
+            q.prompt = "In " + key.name() + " major: " + symbols.joinIntoString ("  -  ") + ". Which progression is it?";
+        else
+        {
+            q.prompt = "Listen: which progression is it? Follow the bass.";
+            q.autoListen = true;
+        }
+        return q;
+    }
+
+    if (t == "rhythmValue")
+    {
+        const auto& values = noteValues();
+        const int which = rng.nextInt ((int) values.size());
+        const auto& v = values[(size_t) which];
+        q.rhythm = { { 0.0, v.beats } };
+        q.rhythmBeats = 4.0;
+        for (auto& x : values)
+            q.choices.add (x.beats == 0.25 ? juce::String (juce::CharPointer_UTF8 ("\xc2\xbc")) : x.beats == 0.5 ? juce::String (juce::CharPointer_UTF8 ("\xc2\xbd"))
+                           : x.beats == 0.75 ? juce::String (juce::CharPointer_UTF8 ("\xc2\xbe")) : x.beats == 1.5 ? juce::String (juce::CharPointer_UTF8 ("1\xc2\xbd"))
+                           : juce::String ((int) x.beats));
+        q.prompt = "How many beats does this note last in 4/4?";
+        q.correctChoice = which;
+        q.choiceColumns = 8;
+        q.explanation = "It is a " + v.name + ": " + q.choices[which] + (v.beats == 1.0 ? " beat." : " beats.")
+                      + (v.name.startsWith ("dotted") ? " A dot adds half the note's value again." : "");
+        return q;
+    }
+
+    if (t == "tapRhythm")
+    {
+        const int level = (int) spec.params.getProperty ("level", 1);
+        const int beats = (int) spec.params.getProperty ("beats", 8);
+        q.rhythm = randomRhythm (level, beats, rng);
+        q.rhythmBeats = beats;
+        q.tapRhythm = true;
+        q.tapBpm = (double) spec.params.getProperty ("bpm", level >= 3 ? 66 : 80);
+        q.prompt = "Tap this rhythm with the click: Space, the pad, or strum muted strings. Count out loud.";
+        // Listen: four clicks to count in, then the rhythm over the clicks
+        const double spb = 60.0 / q.tapBpm;
+        for (int b = 0; b < 4 + beats; ++b)
+        {
+            q.listenMidi.push_back (b < 4 ? 88 : 84);
+            q.listenTimes.push_back (b * spb);
+        }
+        for (auto& e : q.rhythm)
+        {
+            q.listenMidi.push_back (69);
+            q.listenTimes.push_back ((4.0 + e.beat) * spb);
+        }
+        q.listenBeforeAnswer = true;
+        q.explanation = juce::String ((int) q.rhythm.size()) + " notes at " + juce::String ((int) q.tapBpm) + " BPM.";
+        return q;
+    }
+
+    if (t == "earCell")
+    {
+        const bool three = spec.params.getProperty ("pulses", 3).toString() == "3";
+        const auto& cells = three ? threePulseCells() : fourPulseCells();
+        const int which = rng.nextInt ((int) cells.size());
+        const auto& c = cells[(size_t) which];
+        const double spb = 60.0 / 70.0;
+        // a click on each of four beats, the cell on every beat
+        for (int b = 0; b < 4; ++b)
+        {
+            q.listenMidi.push_back (88);
+            q.listenTimes.push_back (b * spb);
+            for (auto& e : cellEvents (c, b))
+            {
+                q.listenMidi.push_back (69);
+                q.listenTimes.push_back (e.beat * spb + 0.004);
+            }
+        }
+        q.autoListen = true;
+        q.prompt = juce::String ("Listen: which ") + (three ? "three" : "four") + "-pulse cell is played on every beat?";
+        for (auto& x : cells)
+            q.choices.add (x.name + "   " + x.syllables);
+        q.correctChoice = which;
+        q.choiceColumns = three ? 2 : 3;
+        q.explanation = c.name + ": " + c.syllables + ". Say it while you tap it.";
+        return q;
+    }
+
     q.prompt = "Unknown exercise type: " + t;
     return q;
 }
@@ -1099,7 +1291,8 @@ juce::String describeExerciseInput (const ExerciseSpec& spec)
     const auto& t = spec.type;
     if (t == "playStaff" || t == "playInterval" || t == "findFret" || t == "playScale" || t == "playTriad") return "play or click";
     if (t == "nameStaff") return "click or play";
-    if (t == "earInterval" || t == "earScale" || t == "earTriad" || t == "earBluesChange" || t == "earFeel") return "listen";
+    if (t == "earInterval" || t == "earScale" || t == "earTriad" || t == "earBluesChange" || t == "earFeel" || t == "earProgression" || t == "earCell") return "listen";
+    if (t == "tapRhythm") return "tap or strum";
     if (t == "playBend") return "play";
     if (t == "writeStaff" || t == "writeScale") return "write";
     return "click";

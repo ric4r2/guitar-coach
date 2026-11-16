@@ -3,6 +3,7 @@
 #include <array>
 #include <atomic>
 #include <vector>
+#include <juce_core/juce_core.h>
 
 // A note the player has just played: reported once when the pitch has been steady for a few frames.
 struct NoteEvent
@@ -43,6 +44,9 @@ public:
     bool analyze (NoteEvent& event, bool& gotEvent);
 
     PitchFrame getLatest() const;
+
+    // Attacks (picked or strummed, pitched or not), in seconds of input, for rhythm tapping. Reader: one other thread.
+    bool popOnset (double& seconds);
     double getAnalysisRate() const { return analysisRate; }
     float takeInputPeak() { return inputLevel.exchange (0.0f); }   // peak since last asked, for meters
 
@@ -74,8 +78,11 @@ private:
     std::vector<float> frame = std::vector<float> ((size_t) PitchDetector::frameSize, 0.0f);
     int candidate = -1, candidateCount = 0, emitted = -1, quietCount = 0;
     float slowLevel = 0.0f;
+    std::array<float, 4> recentHf {};   // high-frequency level of the last hops, newest first
     bool retrigger = false;
-    int framesSinceOnset = 1000;
+    int framesSinceOnset = 1000, framesSinceReport = 1000;
+    juce::AbstractFifo onsetFifo { 64 };
+    std::array<double, 64> onsetTimes {};
 
     mutable std::atomic<bool> latestValid { false };
     std::atomic<float> latestHz { 0 }, latestMidi { 0 }, latestConf { 0 }, latestLevel { 0 };

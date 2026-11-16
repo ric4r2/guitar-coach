@@ -24,6 +24,7 @@ set(CORE_SOURCES
     Source/core/Fingerings.cpp
     Source/core/BackingTrack.cpp
     Source/core/Licks.cpp
+    Source/core/Rhythm.cpp
     Source/core/InputAnalyzer.cpp
     Source/core/Lessons.cpp
     Source/core/Progress.cpp)

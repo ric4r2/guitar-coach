@@ -94,6 +94,7 @@ public:
     ImprovPage (AudioEngine&, Progress&, const std::vector<Lesson>& bluesLessons);
     void notePlayed (const NoteEvent&) override;
     void pitchChanged (const PitchFrame&) override;
+    void onsetDetected (double t) override { if (currentTab == lessonsTab) lessons.onsetDetected (t); }
     void showTab (int tab);
     TheoryPage& getLessons() { return lessons; }
     BackingPanel& getBacking() { return backing; }

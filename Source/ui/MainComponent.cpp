@@ -127,7 +127,7 @@ void HomePage::paint (juce::Graphics& g)
     drawHeading (g, "Coming next", inner.removeFromTop (28), 18.0f);
     g.setColour (Palette::dim);
     g.setFont (Fonts::ui (15.0f));
-    g.drawFittedText ("Milestone 4: seventh chords and the chords of every key, Roman numerals and progressions, chord-quality ear training, and rhythm reading with tapping.",
+    g.drawFittedText ("Milestone 5, pre-Gleason: modes, arpeggios across the neck, II-V-I in every key, secondary dominants, octave shapes, cells, and a readiness quiz for the book.",
                       inner.removeFromTop (60), juce::Justification::topLeft, 3);
 }
 
@@ -314,6 +314,11 @@ void MainComponent::timerCallback()
     while (engine.popNote (e))
         if (input != nullptr)
             input->notePlayed (e);
+
+    double onset = 0.0;
+    while (engine.popOnset (onset))
+        if (input != nullptr)
+            input->onsetDetected (onset);
 
     const auto f = engine.getPitch();
     if (input != nullptr)

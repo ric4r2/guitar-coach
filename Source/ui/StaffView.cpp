@@ -289,7 +289,7 @@ void StaffView::paintRhythm (juce::Graphics& g) const
     for (int i = 0; i < (int) rhythm.size(); ++i)
     {
         const auto& n = rhythm[(size_t) i];
-        if (n.length > 0.55)
+        if (n.length > 0.8)   // eighths, dotted eighths, sixteenths and triplets are beamed
             continue;
         const int beat = (int) std::floor (n.beat + 1.0e-6);
         if (! groups.empty() && groupOf[(size_t) i - (i > 0 ? 1 : 0)] == (int) groups.size() - 1 && i > 0
@@ -357,25 +357,48 @@ void StaffView::paintRhythm (juce::Graphics& g) const
         }
         g.setColour (Palette::ink);
         float firstX = 0, lastX = 0;
+        std::vector<float> stemX;
         for (size_t k = 0; k < grp.size(); ++k)
         {
             const auto& n = rhythm[(size_t) grp[k]];
             const float x = headX (n.beat);
             const float sx = up ? x + sp * 0.62f : x - sp * 0.62f;
             g.drawLine (sx, yForStep (stepOf (n)), sx, beamY, 1.4f);
+            stemX.push_back (sx);
             if (k == 0) firstX = sx;
             lastX = sx;
         }
         const float thick = sp * 0.45f;
+        auto isSixteenth = [&] (size_t k) { return rhythm[(size_t) grp[k]].length < 0.3; };
         if (grp.size() > 1)
+        {
             g.fillRect (firstX, up ? beamY : beamY - thick, lastX - firstX + 1.4f, thick);
+            // second beam for sixteenths: joined between neighbours, or a stub towards the neighbour
+            const float y2 = up ? beamY + thick * 1.8f : beamY - thick * 2.8f;
+            for (size_t k = 0; k < grp.size(); ++k)
+            {
+                if (! isSixteenth (k))
+                    continue;
+                if (k + 1 < grp.size() && isSixteenth (k + 1))
+                    g.fillRect (stemX[k], y2, stemX[k + 1] - stemX[k] + 1.4f, thick);
+                else if (! (k > 0 && isSixteenth (k - 1)))
+                {
+                    const float stub = sp * 1.0f;
+                    g.fillRect (k > 0 ? stemX[k] - stub : stemX[k], y2, stub + 1.4f, thick);
+                }
+            }
+        }
         else
         {
-            // flag
-            juce::Path flag;
-            flag.startNewSubPath (firstX, beamY);
-            flag.quadraticTo (firstX + sp * 1.1f, beamY + (up ? sp * 1.2f : -sp * 1.2f), firstX + sp * 0.8f, beamY + (up ? sp * 2.4f : -sp * 2.4f));
-            g.strokePath (flag, juce::PathStrokeType (sp * 0.3f));
+            // flag (two for a sixteenth)
+            for (int f = 0; f < (isSixteenth (0) ? 2 : 1); ++f)
+            {
+                const float y0 = beamY + (up ? 1.0f : -1.0f) * sp * 0.8f * (float) f;
+                juce::Path flag;
+                flag.startNewSubPath (firstX, y0);
+                flag.quadraticTo (firstX + sp * 1.1f, y0 + (up ? sp * 1.2f : -sp * 1.2f), firstX + sp * 0.8f, y0 + (up ? sp * 2.4f : -sp * 2.4f));
+                g.strokePath (flag, juce::PathStrokeType (sp * 0.3f));
+            }
         }
         if (grp.size() == 3 && isTriplet (rhythm[(size_t) grp[1]].beat))
         {

@@ -24,6 +24,7 @@ public:
     // input
     PitchFrame getPitch() const { return analyzer.getLatest(); }
     bool popNote (NoteEvent& e);                // notes played since the last call
+    bool popOnset (double& seconds) { return analyzer.popOnset (seconds); }   // attacks, for rhythm tapping
     float takeInputPeak() { return analyzer.takeInputPeak(); }
     void setInputChannel (int channel);         // -1 = all active inputs mixed, otherwise 0-based active input
     int getInputChannel() const { return inputChannel.load(); }

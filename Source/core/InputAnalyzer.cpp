@@ -77,6 +77,29 @@ bool InputAnalyzer::analyze (NoteEvent& event, bool& gotEvent)
         framesSinceOnset = 0;
         candidateCount = 0;   // the new pluck must hold steady on its own before it counts
     }
+    // report attacks for tapping, from the high-frequency energy of the newest hop: a pick or a strum is a burst of
+    // brightness even when the string before is still ringing as loud. 75 ms apart at least, so sixteenths come through.
+    double hfE = 0.0;
+    for (int i = PitchDetector::frameSize - hop; i < PitchDetector::frameSize; ++i)
+    {
+        const double d = (double) frame[(size_t) i] - frame[(size_t) i - 1];
+        hfE += d * d;
+    }
+    const float hf = (float) std::sqrt (hfE / hop);
+    // against the quietest of the last four hops: an attack can spread over two hops
+    float recentMin = 1.0e9f;
+    for (auto v : recentHf) recentMin = juce::jmin (recentMin, v);
+    const bool attack = hf > 0.004f && hf > 2.0f * recentMin;
+    for (size_t k = recentHf.size() - 1; k > 0; --k) recentHf[k] = recentHf[k - 1];
+    recentHf[0] = hf;
+    if (++framesSinceReport > 7 && attack)
+    {
+        framesSinceReport = 0;
+        const auto scope = onsetFifo.write (1);
+        const double t = (double) (w - hop) / analysisRate;
+        if (scope.blockSize1 > 0) onsetTimes[(size_t) scope.startIndex1] = t;
+        else if (scope.blockSize2 > 0) onsetTimes[(size_t) scope.startIndex2] = t;
+    }
     slowLevel = 0.85f * slowLevel + 0.15f * level;
 
     const auto r = detector.detect (frame.data(), analysisRate);
@@ -127,6 +150,14 @@ bool InputAnalyzer::analyze (NoteEvent& event, bool& gotEvent)
             emitted = -1;
     }
     return true;
+}
+
+bool InputAnalyzer::popOnset (double& seconds)
+{
+    const auto scope = onsetFifo.read (1);
+    if (scope.blockSize1 > 0) { seconds = onsetTimes[(size_t) scope.startIndex1]; return true; }
+    if (scope.blockSize2 > 0) { seconds = onsetTimes[(size_t) scope.startIndex2]; return true; }
+    return false;
 }
 
 PitchFrame InputAnalyzer::getLatest() const

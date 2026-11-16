@@ -401,3 +401,89 @@ namespace theory
         return degreeLabel (t.intervals[(size_t) juce::jlimit (0, (int) t.intervals.size() - 1, index)]);
     }
 }
+
+namespace theory
+{
+    // ---------------------------------------------------------------- diatonic harmony
+
+    const ChordType* identifyChord (const std::vector<Note>& notes)
+    {
+        if (notes.size() < 3)
+            return nullptr;
+        std::vector<int> semis;
+        for (size_t i = 1; i < notes.size(); ++i)
+            semis.push_back (mod12 (notes[i].midi() - notes[0].midi()));
+        auto matches = [&] (const ChordType& t)
+        {
+            if (t.intervals.size() != notes.size())
+                return false;
+            for (size_t i = 1; i < t.intervals.size(); ++i)
+                if (mod12 (t.intervals[i].semitones) != semis[i - 1])
+                    return false;
+            return true;
+        };
+        for (auto& t : triadTypes())
+            if (matches (t))
+                return &t;
+        for (auto& t : seventhTypes())
+            if (matches (t))
+                return &t;
+        return nullptr;
+    }
+
+    DiatonicChord diatonicChord (const Note& tonic, int degree, bool seventh)
+    {
+        DiatonicChord c;
+        c.degree = ((degree % 7) + 7) % 7;
+        const auto scale = scaleNotes (tonic, scaleType ("major"), false);
+        for (int k = 0; k < (seventh ? 4 : 3); ++k)
+        {
+            const int i = c.degree + 2 * k;
+            auto n = scale[(size_t) (i % 7)];
+            n.octave += i / 7;
+            c.notes.push_back (n);
+        }
+        c.root = c.notes.front();
+        c.type = identifyChord (c.notes);
+        return c;
+    }
+
+    juce::String romanNumeral (int degree, const ChordType& t)
+    {
+        static const char* upper[7] = { "I", "II", "III", "IV", "V", "VI", "VII" };
+        static const char* lower[7] = { "i", "ii", "iii", "iv", "v", "vi", "vii" };
+        const int d = ((degree % 7) + 7) % 7;
+        if (t.intervals.size() == 3)
+        {
+            if (t.id == "major") return upper[d];
+            if (t.id == "minor") return lower[d];
+            if (t.id == "diminished") return juce::String (lower[d]) + juce::String (juce::CharPointer_UTF8 ("\xc2\xb0"));
+            return juce::String (upper[d]) + "+";
+        }
+        return juce::String (upper[d]) + t.symbol;
+    }
+
+    juce::String harmonicFunction (int degree)
+    {
+        switch (((degree % 7) + 7) % 7)
+        {
+            case 0: case 2: case 5: return "tonic";
+            case 1: case 3:         return "subdominant";
+            default:                return "dominant";
+        }
+    }
+
+    const std::vector<Progression>& commonProgressions()
+    {
+        static const std::vector<Progression> list {
+            { "I - IV - V - I",      { 0, 3, 4, 0 }, false },
+            { "I - vi - IV - V",     { 0, 5, 3, 4 }, false },
+            { "I - V - vi - IV",     { 0, 4, 5, 3 }, false },
+            { "I - IV - I - V",      { 0, 3, 0, 4 }, false },
+            { "vi - IV - I - V",     { 5, 3, 0, 4 }, false },
+            { "IIm7 - V7 - Imaj7",   { 1, 4, 0 },    true },
+            { "Imaj7 - VIm7 - IIm7 - V7", { 0, 5, 1, 4 }, true },
+            { "IIIm7 - VIm7 - IIm7 - V7", { 2, 5, 1, 4 }, true } };
+        return list;
+    }
+}

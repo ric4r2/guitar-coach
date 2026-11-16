@@ -1,5 +1,6 @@
 #pragma once
 #include "Theory.h"
+#include "Rhythm.h"
 #include <functional>
 
 // Lessons come from Content/lessons.json (embedded). Each exercise turns into questions here.
@@ -59,6 +60,7 @@ struct Question
     bool listenBeforeAnswer = false;    // the Listen button is there from the start, not only after answering
     bool listenAsChord = false;         // after the notes one by one, play them together
     double listenGap = 0.75;            // seconds between notes
+    std::vector<double> listenTimes;    // when not empty: when each of listenMidi plays, in seconds
     std::vector<std::vector<int>> listenChords;   // played one after another as block chords, listenGap apart
     int listenBacking = -1;             // a feel: Listen plays two bars of the backing band in it
     int listenBackingKey = 9;
@@ -70,6 +72,12 @@ struct Question
     bool showKeySignature = false;
     int keySignature = 0;               // fifths: +3 = three sharps
     juce::StringArray revealStepLabels; // drawn between the revealed staff notes ("W", "H")
+
+    // rhythm on the staff (one pitch), and tapping it
+    std::vector<RhythmEvent> rhythm;
+    double rhythmBeats = 0.0;
+    bool tapRhythm = false;
+    double tapBpm = 80.0;
 
     // An answer made of several notes in order: clicked by name, played, clicked on the neck or written.
     // The first `sequenceGiven` notes are shown already (usually the root).
