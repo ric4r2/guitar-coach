@@ -55,6 +55,21 @@ struct Question
     bool acceptsPlaying = false;        // answer by playing the guitar
     std::vector<int> listenMidi;        // what the Listen button plays (in order)
     bool autoListen = false;
+    bool listenBeforeAnswer = false;    // the Listen button is there from the start, not only after answering
+    bool listenAsChord = false;         // after the notes one by one, play them together
+    double listenGap = 0.75;            // seconds between notes
+
+    // staff extras
+    bool staffChord = false;            // staffNotes / revealStaff drawn as one chord
+    bool showKeySignature = false;
+    int keySignature = 0;               // fifths: +3 = three sharps
+    juce::StringArray revealStepLabels; // drawn between the revealed staff notes ("W", "H")
+
+    // An answer made of several notes in order: clicked by name, played, clicked on the neck or written.
+    // The first `sequenceGiven` notes are shown already (usually the root).
+    std::vector<theory::Note> sequence;
+    int sequenceGiven = 0;
+    bool sequenceAnyOctave = true;      // played or clicked notes: any octave of the right note counts
 
     std::function<bool (int choice)> judgeChoice;   // when empty, only correctChoice is right
     std::function<bool (int midi)> judgePlayed;
@@ -70,6 +85,9 @@ struct Question
 
 Question makeQuestion (const ExerciseSpec& spec, juce::Random& rng);
 juce::String describeExerciseInput (const ExerciseSpec& spec);   // "click or play", for the exercise list
+
+// Every close shape of a triad on three neighbouring strings (top string `top`), frets 0..maxFret. Labels R, 3, 5.
+std::vector<FretMark> triadShapeMarks (const theory::Note& root, const theory::ChordType&, int top, int maxFret);
 
 // Choice labels used by note-name questions
 juce::StringArray naturalChoices();

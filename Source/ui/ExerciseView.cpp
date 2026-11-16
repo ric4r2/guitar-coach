@@ -23,7 +23,7 @@ ExerciseView::ExerciseView (AudioEngine& e, Progress& p) : engine (e), progress 
     }
 
     backButton.onClick = [this] { stopTimer(); engine.stopNotes(); if (onBack) onBack(); };
-    listenButton.onClick = [this] { engine.stopNotes(); engine.playSequence (q.listenMidi); };
+    listenButton.onClick = [this] { playListen(); };
     nextButton.onClick = [this]
     {
         if (! done)
@@ -35,6 +35,8 @@ ExerciseView::ExerciseView (AudioEngine& e, Progress& p) : engine (e), progress 
             feedbackColour = Palette::gold;
             reveal (false);
             updateButtons();
+            resized();
+            repaint();
             return;
         }
         nextQuestion();
@@ -44,6 +46,13 @@ ExerciseView::ExerciseView (AudioEngine& e, Progress& p) : engine (e), progress 
     staff.onPlace = [this] (const theory::Note& n)
     {
         if (done || ! q.judgeStaff) return;
+        if (! q.sequence.empty())
+        {
+            const auto& want = q.sequence[(size_t) seqPos];
+            const bool right = q.sequenceAnyOctave ? (n.letter == want.letter && n.acc == want.acc) : n == want;
+            sequenceAnswer (right, "You wrote " + n.name (false) + (n.letter == want.letter && n.acc == want.acc ? " in the wrong octave." : "."));
+            return;
+        }
         const bool ok = q.judgeStaff (n);
         q.staffNotes = { n };
         staff.setNotes (q.staffNotes, { ok ? Palette::green : Palette::red });
@@ -54,6 +63,22 @@ ExerciseView::ExerciseView (AudioEngine& e, Progress& p) : engine (e), progress 
     {
         engine.playNote (theory::fretMidi (s, f), 0.0, 1.2);
         if (done || ! q.judgeFret) return;
+        if (! q.sequence.empty())
+        {
+            const int midi = theory::fretMidi (s, f);
+            const bool right = sequenceMatches (midi);
+            if (right)
+                enteredMarks.push_back ({ s, f, q.sequence[(size_t) seqPos].name(), seqPos == 0 ? 1 : 2 });
+            else
+                wrongMarks.push_back ({ s, f, theory::noteFromMidi (midi).name(), 3 });
+            auto marks = q.fretMarks;
+            marks.insert (marks.end(), enteredMarks.begin(), enteredMarks.end());
+            if (! right)
+                marks.push_back (wrongMarks.back());
+            fretboard.setMarks (marks);
+            sequenceAnswer (right, "That is " + theory::noteFromMidi (midi).name (true) + ".");
+            return;
+        }
         const bool ok = q.judgeFret (s, f);
         if (! ok)
         {
@@ -96,11 +121,17 @@ void ExerciseView::showQuestion()
     done = missed = false;
     feedback = {};
     wrongMarks.clear();
+    enteredMarks.clear();
+    seqPos = q.sequenceGiven;
     questionShownAt = juce::Time::getMillisecondCounter();
 
-    const bool useStaff = ! q.staffNotes.empty() || q.staffClick || ! q.revealStaff.empty();
+    const bool useStaff = ! q.staffNotes.empty() || q.staffClick || ! q.revealStaff.empty() || q.showKeySignature || ! q.sequence.empty();
     staff.setVisible (useStaff);
-    staff.setNotes (q.staffNotes);
+    staff.setKeySignature (q.showKeySignature ? q.keySignature : 0);
+    if (q.staffChord)
+        staff.setChords ({ q.staffNotes });
+    else
+        staff.setNotes (q.staffNotes);
     staff.setClickable (q.staffClick);
     staff.setAccidental (0);
     naturalButton.setToggleState (true, juce::dontSendNotification);
@@ -120,17 +151,22 @@ void ExerciseView::showQuestion()
         addAndMakeVisible (b);
         b->onClick = [this, i]
         {
+            if (! q.sequence.empty())
+            {
+                if (done) return;
+                const bool right = q.choices[i] == q.sequence[(size_t) seqPos].name();
+                if (! right)
+                    choiceButtons[i]->setColour (juce::TextButton::buttonColourId, Palette::red.darker (0.2f));
+                sequenceAnswer (right, "Not " + q.choices[i] + ".");
+                return;
+            }
             const bool ok = q.judgeChoice ? q.judgeChoice (i) : i == q.correctChoice;
             attempt (ok, {}, true, i);
         };
     }
 
-    listenButton.setVisible (! q.listenMidi.empty() && (q.autoListen || spec.type == "steps" || spec.type == "playInterval"));
     if (q.autoListen)
-    {
-        engine.stopNotes();
-        engine.playSequence (q.listenMidi);
-    }
+        playListen();
 
     updateButtons();
     resized();
@@ -142,7 +178,7 @@ void ExerciseView::updateButtons()
     nextButton.setVisible (! finished && (done || q.acceptsPlaying || q.fretClick || q.staffClick));
     nextButton.setButtonText (done ? (questionNumber >= questionsPerRound ? "Finish" : "Next") : "Show answer");
     againButton.setVisible (finished);
-    listenButton.setVisible (! finished && ! q.listenMidi.empty() && (q.autoListen || done || spec.type == "steps" || spec.type == "playInterval"));
+    listenButton.setVisible (! finished && ! q.listenMidi.empty() && (q.autoListen || done || q.listenBeforeAnswer));
     for (auto* b : choiceButtons)
         b->setVisible (! finished);
 }
@@ -188,7 +224,7 @@ void ExerciseView::attempt (bool correct, const juce::String& hint, bool isChoic
 
 void ExerciseView::reveal (bool correct)
 {
-    if (q.correctChoice >= 0 && q.correctChoice < choiceButtons.size())
+    if (q.sequence.empty() && q.correctChoice >= 0 && q.correctChoice < choiceButtons.size())
         choiceButtons[q.correctChoice]->setColour (juce::TextButton::buttonColourId, Palette::green.darker (0.3f));
     if (! q.revealMarks.empty())
     {
@@ -197,17 +233,24 @@ void ExerciseView::reveal (bool correct)
             marks.insert (marks.begin(), wrongMarks.begin(), wrongMarks.end());
         fretboard.setMarks (marks);
     }
-    if (! q.revealStaff.empty())
+    const auto shown = ! q.revealStaff.empty() ? q.revealStaff : q.sequence;
+    if (! shown.empty())
     {
-        std::vector<theory::Note> shown = q.revealStaff;
-        std::vector<juce::Colour> cols (shown.size(), Palette::green.darker (0.4f));
         staff.setVisible (true);
-        staff.setNotes (shown, cols, true);
+        if (q.staffChord)
+        {
+            juce::StringArray names;
+            for (auto& n : shown) names.add (n.name());
+            staff.setChords ({ shown }, { names.joinIntoString (" ") }, { Palette::green.darker (0.4f) });
+        }
+        else
+        {
+            staff.setNotes (shown, std::vector<juce::Colour> (shown.size(), Palette::green.darker (0.4f)), true);
+            staff.setStepLabels (q.revealStepLabels);
+        }
         staff.setClickable (false);
     }
-    if (q.showFretboard == false && ! q.revealMarks.empty() && spec.type != "intervalSemis")
-        fretboard.setVisible (true);
-    if (spec.type == "intervalSemis")
+    if (! q.revealMarks.empty())
         fretboard.setVisible (true);
 }
 
@@ -242,6 +285,11 @@ void ExerciseView::notePlayed (const NoteEvent& e)
         return;
     if (juce::Time::getMillisecondCounter() - questionShownAt < 500)
         return;   // ignore the last note still ringing from the previous question
+    if (! q.sequence.empty())
+    {
+        sequenceAnswer (sequenceMatches (e.midi), "You played " + theory::noteFromMidi (e.midi).name (true) + ".");
+        return;
+    }
     const bool ok = q.judgePlayed (e.midi);
     attempt (ok, ok ? juce::String() : q.wrongPlayHint (e.midi), false);
 }
@@ -252,6 +300,59 @@ void ExerciseView::pitchChanged (const PitchFrame& f)
         fretboard.setLiveMidi (f.valid ? juce::roundToInt (f.midi) : -1);
 }
 
+void ExerciseView::playListen()
+{
+    engine.stopNotes();
+    engine.playSequence (q.listenMidi, q.listenGap, juce::jmax (0.6, q.listenGap * 1.6));
+    if (q.listenAsChord)
+    {
+        const double at = q.listenGap * (double) q.listenMidi.size() + 0.3;
+        for (int m : q.listenMidi)
+            engine.playNote (m, at, 2.2, 0.6f);
+    }
+}
+
+bool ExerciseView::sequenceMatches (int midi) const
+{
+    const auto& want = q.sequence[(size_t) seqPos];
+    return q.sequenceAnyOctave ? theory::mod12 (midi) == want.pc() : midi == want.midi();
+}
+
+void ExerciseView::showSequenceSoFar()
+{
+    if (! staff.isVisible())
+        return;
+    std::vector<theory::Note> notes (q.sequence.begin(), q.sequence.begin() + seqPos);
+    std::vector<juce::Colour> cols;
+    for (int i = 0; i < seqPos; ++i)
+        cols.push_back (i < q.sequenceGiven ? Palette::ink : Palette::green.darker (0.4f));
+    staff.setNotes (notes, cols);
+}
+
+void ExerciseView::sequenceAnswer (bool ok, const juce::String& wrongText)
+{
+    if (done || finished)
+        return;
+    if (! ok)
+    {
+        missed = true;
+        feedback = wrongText + " Try again, or press Show answer.";
+        feedbackColour = Palette::red;
+        repaint();
+        return;
+    }
+    ++seqPos;
+    showSequenceSoFar();
+    if (seqPos >= (int) q.sequence.size())
+    {
+        attempt (true, {}, false);
+        return;
+    }
+    feedback = q.sequence[(size_t) seqPos - 1].name() + juce::String (juce::CharPointer_UTF8 (" \xe2\x9c\x93   Next note?"));
+    feedbackColour = Palette::green;
+    repaint();
+}
+
 void ExerciseView::simulateChoice (bool correct)
 {
     if (q.choices.isEmpty())
@@ -260,6 +361,13 @@ void ExerciseView::simulateChoice (bool correct)
     if (! correct)
         i = (q.correctChoice + 1) % q.choices.size();
     attempt (correct, {}, true, i);
+    stopTimer();
+}
+
+void ExerciseView::simulateSequence (int notes)
+{
+    for (int i = 0; i < notes && ! done && seqPos < (int) q.sequence.size(); ++i)
+        sequenceAnswer (true, {});
     stopTimer();
 }
 
@@ -277,11 +385,12 @@ void ExerciseView::paint (juce::Graphics& g)
     top.removeFromLeft (110);
     g.setColour (Palette::gold);
     g.setFont (Fonts::ui (22.0f, true));
-    g.drawText (spec.title, top.removeFromLeft (top.getWidth() - 260), juce::Justification::centredLeft);
+    g.drawText (spec.title, top.removeFromLeft (top.getWidth() - 360), juce::Justification::centredLeft);
     g.setColour (Palette::dim);
     g.setFont (Fonts::ui (16.0f));
     g.drawText (finished ? "Done" : "Question " + juce::String (questionNumber) + " of " + juce::String (questionsPerRound)
-                    + juce::String::fromUTF8 ("   ·   score ") + juce::String (score),
+                    + juce::String::fromUTF8 ("   ·   score ") + juce::String (score)
+                    + (! q.sequence.empty() && ! done ? juce::String::fromUTF8 ("   ·   note ") + juce::String (seqPos + 1) + " of " + juce::String ((int) q.sequence.size()) : juce::String()),
                 top, juce::Justification::centredRight);
 
     // score dots

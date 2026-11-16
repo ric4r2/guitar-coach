@@ -88,6 +88,21 @@ double Progress::bestDrill (const juce::String& key) const
     return -1.0;
 }
 
+void Progress::recordTempo (const juce::String& key, double bpm)
+{
+    auto* d = section ("tempos");
+    if (bpm > (double) d->getProperty (key))
+        d->setProperty (key, bpm);
+    markPracticeToday();
+}
+
+double Progress::bestTempo (const juce::String& key) const
+{
+    if (auto* d = section ("tempos"))
+        return (double) d->getProperty (key);
+    return 0.0;
+}
+
 void Progress::markPracticeToday()
 {
     auto* days = section ("days");

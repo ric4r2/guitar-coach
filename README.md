@@ -1,8 +1,9 @@
 # GuitarCoach
 
-Desktop program for daily guitar practice and music theory: lessons with exercises answered by clicking
-or by playing the guitar (pitch detection through the Audient iD14), a fretboard explorer, tuner and
-metronome. See [docs/PLAN.md](docs/PLAN.md) for the curriculum and milestones and
+Desktop program for daily guitar practice and music theory: lessons with exercises answered by clicking,
+writing on the staff or playing the guitar (pitch detection through the Audient iD14); scale practice in
+every position and technique drills, checked note by note with a tempo ladder; a fretboard explorer, tuner
+and metronome. See [docs/PLAN.md](docs/PLAN.md) for the curriculum and milestones and
 [docs/RESEARCH.md](docs/RESEARCH.md) for the research behind it.
 
 ## Build (Windows, VS2022 Build Tools)
@@ -23,7 +24,8 @@ Progress and audio settings are saved in `%APPDATA%\GuitarCoach`.
 
 ## Layout
 
-- `Source/core` - theory engine, pitch detection (YIN), note tracking, synth voice, lessons, progress
+- `Source/core` - theory engine (notes, intervals, scales, keys, triads), scale fingerings and drill patterns,
+  pitch detection (YIN), note tracking, synth voice, lessons, progress
 - `Source/audio` - audio device and real-time engine
 - `Source/ui` - screens: Home, Music Theory, Improvisation, Practice, Audio
 - `Content/lessons.json` - lesson text and exercise settings

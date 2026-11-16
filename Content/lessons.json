@@ -114,6 +114,178 @@
         { "type": "earInterval", "title": "Ear: 3rds, 4ths, 5ths, octave", "set": [ "m3", "M3", "P4", "P5", "P8" ] },
         { "type": "earInterval", "title": "Ear: all intervals", "set": [ "m2", "M2", "m3", "M3", "P4", "A4", "P5", "m6", "M6", "m7", "M7", "P8" ] }
       ]
+    },
+    {
+      "id": "L5-major",
+      "level": 2,
+      "strand": "Scales",
+      "title": "The major scale",
+      "summary": "Build any major scale from its step pattern, and play it in one octave.",
+      "body": [
+        "## One pattern, twelve keys",
+        "A major scale is seven notes, one for each letter name, followed by the first note an octave higher. What makes it major is the distance between neighbours: whole, whole, half, whole, whole, whole, half (W W H W W W H). In semitones that is 2 2 1 2 2 2 1.",
+        "Start on C and the pattern lands only on natural notes: C D E F G A B C. Start anywhere else and you need sharps or flats to keep the pattern.",
+        "## Building a scale",
+        "- Write the seven letters in order from the root: G A B C D E F G.",
+        "- Walk the pattern and fix each note with a sharp or flat. G to A is W, A to B is W, B to C is H, C to D is W, D to E is W, E to F must be W, so F becomes F♯, and F♯ to G is H.",
+        "- Every letter appears once. That is why D major uses F♯ and not G♭: G is already taken by the 4th note.",
+        "## Degrees",
+        "The notes are numbered 1 to 7 from the root. Musicians talk in these numbers all the time (\"play the 3rd\", \"the 5th of the key\"), and so does Gleason's book. In D major: 1 D, 2 E, 3 F♯, 4 G, 5 A, 6 B, 7 C♯.",
+        "## On the guitar",
+        "On one string the pattern is frets: 0 2 4 5 7 9 11 12. Across the neck, a one-octave shape starting with the 2nd finger on the 6th string covers the whole scale without moving your hand. The Practice tab shows all five positions."
+      ],
+      "diagram": { "scale": { "root": "C3", "type": "major" } },
+      "exercises": [
+        { "type": "spellScale", "title": "Spell major scales: C G D F B♭", "scale": "major", "roots": [ "C", "G", "D", "F", "Bb" ] },
+        { "type": "scaleDegree", "title": "Degrees of the scale", "scale": "major", "roots": [ "C", "G", "D", "A", "F", "Bb", "Eb" ] },
+        { "type": "writeScale", "title": "Write major scales", "scale": "major", "roots": [ "C", "G", "D", "A", "F", "Bb", "Eb" ] },
+        { "type": "spellScale", "title": "Spell all common major scales", "scale": "major", "roots": [ "C", "G", "D", "A", "E", "B", "F", "Bb", "Eb", "Ab", "Db" ] },
+        { "type": "playScale", "title": "Play the scale you are given", "scale": "major", "roots": [ "C", "G", "D", "A", "E", "F", "Bb" ] }
+      ]
+    },
+    {
+      "id": "L6-keys",
+      "level": 2,
+      "strand": "Theory",
+      "title": "Key signatures and the circle of fifths",
+      "summary": "Read a key signature at a glance and find any key on the circle.",
+      "body": [
+        "## Key signatures",
+        "Writing F♯ every time in G major gets old, so the sharps or flats of the key are written once at the start of every line: the key signature. A sharp on the top line means every F is F♯, in every octave, unless a natural sign says otherwise.",
+        "## Always in the same order",
+        "- Sharps: F C G D A E B (Father Charles Goes Down And Ends Battle)",
+        "- Flats: B E A D G C F (the same words backwards)",
+        "- Sharp keys: the key is a half step above the last sharp. Three sharps end on G♯, so the key is A major.",
+        "- Flat keys: the key is the second-to-last flat. Three flats (B♭ E♭ A♭): E♭ major. One flat is F major; learn that one by heart.",
+        "## The circle of fifths",
+        "Put the twelve keys around a clock face, C at the top. Each step clockwise goes up a perfect 5th and adds one sharp: C, G, D, A, E, B, F♯. Each step counter-clockwise goes up a perfect 4th and adds one flat: C, F, B♭, E♭, A♭, D♭, G♭. At the bottom, F♯ and G♭ are the same keys spelled two ways.",
+        "Neighbours on the circle share six of their seven notes, which is why songs move so easily between them. The I, IV and V chords of any key (the three chords of the blues) sit right next to each other: IV is one step counter-clockwise, V one step clockwise.",
+        "## On the guitar",
+        "The circle is also a fingerboard shape: the same fret on the next string up is a 4th higher, one step counter-clockwise. The same fret on the next string down is a 4th lower, which is the same letter as a 5th up: one step clockwise. Moving a shape across the strings walks you around the circle."
+      ],
+      "diagram": { "circle": true },
+      "exercises": [
+        { "type": "nameKeySig", "title": "Name the major key: up to 4 sharps or flats", "lo": -4, "hi": 4 },
+        { "type": "countKeySig", "title": "How many sharps or flats?", "lo": -6, "hi": 6 },
+        { "type": "circle", "title": "Around the circle", "modes": [ "fifthUp", "fifthDown" ] },
+        { "type": "nameKeySig", "title": "Name the major key: all keys", "lo": -7, "hi": 7 }
+      ]
+    },
+    {
+      "id": "L7-minor",
+      "level": 2,
+      "strand": "Scales",
+      "title": "Minor scales and relative keys",
+      "summary": "Natural and harmonic minor, and the major key that shares each minor key's notes.",
+      "body": [
+        "## Natural minor",
+        "Play the notes of C major but start and end on A: A B C D E F G A. That is A natural minor. Its step pattern is W H W W H W W. Compared with A major it has a lowered 3rd, 6th and 7th: 1 2 ♭3 4 5 ♭6 ♭7.",
+        "## Relative keys",
+        "A minor and C major use the same seven notes and the same key signature: they are relative keys. Every major key has a relative minor three semitones (a minor 3rd) below it: G major and E minor, F major and D minor, E♭ major and C minor.",
+        "- From a major key to its relative minor: down 3 semitones, or up to the 6th degree.",
+        "- From a minor key to its relative major: up 3 semitones, the ♭3.",
+        "On the circle of fifths each minor key sits next to its relative major.",
+        "## Harmonic minor",
+        "Raise the 7th of natural minor by a half step: A B C D E F G♯ A. The gap between F and G♯ is a step and a half (3 semitones), which gives the scale its exotic sound. The raised 7th, the leading tone, pulls strongly up to the root, and it turns the V chord into a major chord: E major instead of E minor in A minor.",
+        "## Melodic minor",
+        "Jazz players use melodic minor: natural minor with both the 6th and 7th raised, A B C D E F♯ G♯ A, the same going up and down. You will meet it again before Gleason; for now just know it exists.",
+        "## Hearing the difference",
+        "Major sounds settled and bright. Natural minor sounds darker and sadder. Harmonic minor has that one wide step near the top. Listen for the 3rd first, then the step into the octave."
+      ],
+      "diagram": { "scale": { "root": "A3", "type": "naturalMinor" } },
+      "exercises": [
+        { "type": "spellScale", "title": "Spell natural minor scales", "scale": "naturalMinor", "roots": [ "A", "E", "B", "D", "G", "C", "F#" ] },
+        { "type": "circle", "title": "Relative major and minor", "modes": [ "relMinor", "relMajor" ] },
+        { "type": "spellScale", "title": "Spell harmonic minor scales", "scale": "harmonicMinor", "roots": [ "A", "E", "D", "G", "C", "B" ] },
+        { "type": "earScale", "title": "Ear: major, natural or harmonic minor?", "set": [ "major", "naturalMinor", "harmonicMinor" ] },
+        { "type": "nameKeySig", "title": "Name the minor key", "lo": -4, "hi": 4, "minor": true },
+        { "type": "playScale", "title": "Play natural minor scales", "scale": "naturalMinor", "roots": [ "A", "E", "D", "G", "B" ] }
+      ]
+    },
+    {
+      "id": "L8-triads",
+      "level": 2,
+      "strand": "Chords",
+      "title": "Triads: major, minor, diminished, augmented",
+      "summary": "Stack two 3rds to make the four kinds of triad, and hear the difference.",
+      "body": [
+        "## Stacking 3rds",
+        "A triad is three notes stacked in 3rds: a root, the 3rd above it and the 5th above it. On the staff a root-position triad looks like a snowman: three notes on three lines or three spaces in a row.",
+        "## Four kinds",
+        "- Major: major 3rd + minor 3rd, so root, 3, 5. C E G. Symbol: C.",
+        "- Minor: minor 3rd + major 3rd, so root, ♭3, 5. C E♭ G. Symbol: Cm.",
+        "- Diminished: minor 3rd + minor 3rd, so root, ♭3, ♭5. C E♭ G♭. Symbol: C°.",
+        "- Augmented: major 3rd + major 3rd, so root, 3, ♯5. C E G♯. Symbol: C+.",
+        "Major and minor triads have a perfect 5th from root to top (7 semitones). Diminished squeezes it to 6, augmented stretches it to 8.",
+        "## Where they come from",
+        "Build a triad on every note of the major scale using only notes of the scale and you get, in order: major, minor, minor, major, major, minor, diminished. In C: C, Dm, Em, F, G, Am, B°. This is the harmony of the key, and you will use it constantly from Level 3 on.",
+        "## By ear",
+        "Major sounds bright and stable, minor darker. Diminished is tense and wants to move. Augmented sounds unresolved and dreamy, as if it is floating."
+      ],
+      "diagram": { "chords": [ [ "C3", "E3", "G3" ], [ "C3", "Eb3", "G3" ], [ "C3", "Eb3", "Gb3" ], [ "C3", "E3", "G#3" ] ], "labels": [ "C", "Cm", "C°", "C+" ] },
+      "exercises": [
+        { "type": "spellTriad", "title": "Spell major and minor triads", "set": [ "major", "minor" ] },
+        { "type": "triadQuality", "title": "Name the triad on the staff", "set": [ "major", "minor", "diminished", "augmented" ] },
+        { "type": "spellTriad", "title": "Spell all four kinds", "set": [ "major", "minor", "diminished", "augmented" ] },
+        { "type": "earTriad", "title": "Ear: major or minor?", "set": [ "major", "minor" ] },
+        { "type": "earTriad", "title": "Ear: all four kinds", "set": [ "major", "minor", "diminished", "augmented" ] },
+        { "type": "playTriad", "title": "Play the triad, note by note", "set": [ "major", "minor" ] }
+      ]
+    },
+    {
+      "id": "L9-inversions",
+      "level": 2,
+      "strand": "Chords",
+      "title": "Triad inversions on string sets",
+      "summary": "Three ways to stack every triad, on three adjacent strings all over the neck.",
+      "body": [
+        "## Inversions",
+        "The notes of a triad can be stacked in any order. Which note is lowest, the bass, gives the inversion:",
+        "- Root position: the root is in the bass. C E G.",
+        "- 1st inversion: the 3rd is in the bass. E G C.",
+        "- 2nd inversion: the 5th is in the bass. G C E.",
+        "Each inversion still has all three notes, so it is still a C major chord, but it sounds a little different and lies in a different place on the neck.",
+        "## On three strings",
+        "Put one note on each of three neighbouring strings (1-2-3, 2-3-4, 3-4-5 or 4-5-6) and every triad has three small shapes, one per inversion. Walking up one string set, the shapes follow each other in a cycle: root position, 1st inversion, 2nd inversion, root position an octave higher.",
+        "These small shapes are what Gleason calls triad shapes and uses for comping and soloing. Learn them on strings 1-2-3 first, the most useful set, then 2-3-4.",
+        "## How to practise",
+        "Pick a chord. Find its three shapes on strings 1-2-3 from the lowest fret up and say the bass note of each: the root, the 3rd or the 5th. Then change major to minor by lowering the 3rd one fret, wherever it is."
+      ],
+      "diagram": { "triadShapes": { "root": "C", "type": "major", "top": 1 } },
+      "exercises": [
+        { "type": "inversionName", "title": "Which inversion? (staff)", "set": [ "major", "minor" ] },
+        { "type": "triadShape", "title": "Name the shape: strings 1-2-3", "set": [ "major", "minor" ], "topStrings": [ 1 ] },
+        { "type": "triadShape", "title": "Name the shape: strings 2-3-4 and 3-4-5", "set": [ "major", "minor" ], "topStrings": [ 2, 3 ] },
+        { "type": "inversionName", "title": "Inversions of all four kinds", "set": [ "major", "minor", "diminished", "augmented" ] }
+      ]
+    },
+    {
+      "id": "L10-shapes",
+      "level": 2,
+      "strand": "Fretboard",
+      "title": "Interval shapes on the neck",
+      "summary": "See every interval as a shape you can move anywhere, including the B-string shift.",
+      "body": [
+        "## Shapes, not counting",
+        "Because the guitar is tuned in 4ths (with one exception), every interval has the same shape wherever you play it. Learn the shape once and you can find a 3rd, a 5th or an octave from any note without thinking of note names.",
+        "## From a root on the 6th, 5th or 4th string",
+        "- Next string, same fret: perfect 4th.",
+        "- Next string, 2 frets up: perfect 5th (the power chord).",
+        "- Next string, 1 fret down: major 3rd. 2 frets down: minor 3rd.",
+        "- Two strings up, 2 frets up: octave.",
+        "- Two strings up, same fret: minor 7th. 1 fret up: major 7th.",
+        "- Two strings up, 1 fret down: major 6th. 2 frets down: minor 6th.",
+        "## The B-string shift",
+        "The G and B strings are a major 3rd apart, not a 4th. Any shape that crosses from the 3rd string to the 2nd moves one fret higher on the B string and above. The octave from the 4th string is 3 frets up, not 2; from the 3rd string it is 3 frets up, two strings over.",
+        "## How to practise",
+        "Name the shape before you name the notes. Then play each interval from a root on every string, saying its name and its size: \"perfect 5th, 7 semitones, 3½ tones\"."
+      ],
+      "diagram": { "intervals": "A2" },
+      "exercises": [
+        { "type": "intervalShape", "title": "Name the shape: 3rds, 4ths, 5ths, octaves", "set": [ "m3", "M3", "P4", "P5", "P8" ] },
+        { "type": "intervalShape", "title": "Name the shape: all intervals", "set": [ "m2", "M2", "m3", "M3", "P4", "A4", "P5", "m6", "M6", "m7", "M7", "P8" ] },
+        { "type": "playInterval", "title": "Play the interval from any root", "set": [ "m3", "M3", "P4", "P5", "M6", "m7", "P8" ] }
+      ]
     }
   ]
 }

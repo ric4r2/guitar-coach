@@ -49,10 +49,10 @@ void HomePage::paint (juce::Graphics& g)
     drawHeading (g, "Today's session (45 min)", inner.removeFromTop (34), 21.0f);
     struct Item { const char* mins; const char* what; };
     const Item items[] = {
-        { "5 min",  "Warm-up: chromatic 1-2-3-4 on every string with the metronome. Start where you make a few mistakes, then add 5 BPM when it is clean." },
+        { "5 min",  "Warm-up: Practice > Technique, chromatic or spider drill with the tempo ladder. It adds 5 BPM after each clean run." },
         { "10 min", "Theory: read the next lesson and pass one exercise." },
-        { "10 min", "Fretboard: note finder drill. Then name every natural note on one string, out loud." },
-        { "15 min", "Ears and playing: interval ear training, then play the intervals from different roots." },
+        { "10 min", "Scales: Practice > Scales, the scale of the current lesson in one shape, up and down, with the metronome." },
+        { "15 min", "Ears and fretboard: one ear-training exercise, then the note finder or interval shapes." },
         { "5 min",  "Review: redo one exercise you passed earlier this week." } };
     for (auto& it : items)
     {
@@ -62,40 +62,51 @@ void HomePage::paint (juce::Graphics& g)
         g.drawText (it.mins, row.removeFromLeft (70), juce::Justification::topLeft);
         g.setColour (Palette::text);
         g.setFont (Fonts::ui (16.0f));
-        g.drawFittedText (it.what, row, juce::Justification::topLeft, 3);
+        g.drawFittedText (it.what, row, juce::Justification::topLeft, 3, 1.0f);
     }
     g.setColour (Palette::dim);
     g.setFont (Fonts::ui (14.0f));
     g.drawFittedText ("Practise in short cycles: repeat until you tire, rest about half as long, repeat. Little and often beats long and rare.",
                       inner.removeFromTop (44), juce::Justification::topLeft, 2);
 
-    // progress
+    // progress, level by level
     drawPanel (g, right.toFloat());
     inner = right.reduced (20, 14);
-    drawHeading (g, "Level 1: Foundations", inner.removeFromTop (34), 21.0f);
+    drawHeading (g, "Your progress", inner.removeFromTop (34), 21.0f);
+    static const char* levelNames[] = { "", "Level 1: Foundations", "Level 2: Position player", "Level 3: Harmony", "Level 4: Pre-Gleason" };
+    int lastLevel = -1;
+    const int rowH = juce::jlimit (24, 34, (inner.getHeight() - 110) / juce::jmax (1, (int) lessons.size() + 2));
     for (auto& l : lessons)
     {
+        if (l.level != lastLevel)
+        {
+            lastLevel = l.level;
+            g.setColour (Palette::gold.withAlpha (0.85f));
+            g.setFont (Fonts::ui (15.0f, true));
+            g.drawText (levelNames[juce::jlimit (0, 4, l.level)], inner.removeFromTop (rowH), juce::Justification::bottomLeft);
+        }
         int passed = 0;
         for (int x = 0; x < (int) l.exercises.size(); ++x)
             passed += progress.passed (l.exerciseKey (x)) ? 1 : 0;
-        auto row = inner.removeFromTop (58);
+        auto row = inner.removeFromTop (rowH);
+        const int total = juce::jmax (1, (int) l.exercises.size());
         g.setColour (Palette::text);
-        g.setFont (Fonts::ui (17.0f));
-        g.drawText (l.title, row.removeFromTop (26), juce::Justification::centredLeft);
-        auto bar = row.removeFromTop (14).toFloat().withTrimmedRight (90);
-        g.setColour (Palette::panelLight);
-        g.fillRoundedRectangle (bar, 5.0f);
-        g.setColour (passed == (int) l.exercises.size() ? Palette::green : Palette::gold);
-        g.fillRoundedRectangle (bar.withWidth (bar.getWidth() * (float) passed / (float) juce::jmax (1, (int) l.exercises.size())), 5.0f);
+        g.setFont (Fonts::ui (15.0f));
+        g.drawText (l.title, row.removeFromLeft (row.getWidth() * 3 / 5), juce::Justification::centredLeft);
         g.setColour (Palette::dim);
-        g.setFont (Fonts::ui (14.0f));
-        g.drawText (juce::String (passed) + " of " + juce::String ((int) l.exercises.size()), juce::Rectangle<float> (bar.getRight() + 8, bar.getY() - 4, 80, 22), juce::Justification::centredLeft);
+        g.setFont (Fonts::ui (13.0f));
+        g.drawText (juce::String (passed) + "/" + juce::String (total), row.removeFromRight (40), juce::Justification::centredRight);
+        auto bar = row.reduced (6, 0).withSizeKeepingCentre (row.getWidth() - 12, 10).toFloat();
+        g.setColour (Palette::panelLight);
+        g.fillRoundedRectangle (bar, 4.0f);
+        g.setColour (passed == total ? Palette::green : Palette::gold);
+        g.fillRoundedRectangle (bar.withWidth (bar.getWidth() * (float) passed / (float) total), 4.0f);
     }
     inner.removeFromTop (10);
-    drawHeading (g, "Coming next", inner.removeFromTop (30), 18.0f);
+    drawHeading (g, "Coming next", inner.removeFromTop (28), 18.0f);
     g.setColour (Palette::dim);
     g.setFont (Fonts::ui (15.0f));
-    g.drawFittedText ("Level 1 continues with the major scale, keys C, G and F, triads, rhythm reading and the 12-bar blues in E and A (milestones 2 and 3).",
+    g.drawFittedText ("Milestone 3: the blues track, with backing tracks made in the app, the minor pentatonic and blues scales, and a lick library you play along with.",
                       inner.removeFromTop (60), juce::Justification::topLeft, 3);
 }
 

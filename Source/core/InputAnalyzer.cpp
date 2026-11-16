@@ -114,6 +114,7 @@ bool InputAnalyzer::analyze (NoteEvent& event, bool& gotEvent)
             event.midi = candidate;
             event.cents = (m - (float) candidate) * 100.0f;
             event.hz = r.frequency;
+            event.time = (double) w / analysisRate;
             gotEvent = true;
         }
     }

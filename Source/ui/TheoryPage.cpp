@@ -14,6 +14,16 @@ TheoryPage::TheoryPage (AudioEngine& e, Progress& p, const std::vector<Lesson>& 
     }
     addAndMakeVisible (diagramStaff);
     addAndMakeVisible (diagramFret);
+    addChildComponent (circle);
+    circle.onSelect = [this] (int fifths, bool minor)
+    {
+        // play the tonic triad of the clicked key
+        auto tonic = keyTonic (fifths, minor);
+        tonic.octave = 3;
+        engine.stopNotes();
+        for (auto& n : chordNotes (tonic, chordType (minor ? "minor" : "major")))
+            engine.playNote (n.midi(), 0.0, 2.0, 0.6f);
+    };
     textViewport.setViewedComponent (&text, false);
     textViewport.setScrollBarsShown (true, false);
     addAndMakeVisible (textViewport);
@@ -22,7 +32,7 @@ TheoryPage::TheoryPage (AudioEngine& e, Progress& p, const std::vector<Lesson>& 
     diagramFret.setClickable (true);
     diagramFret.onClick = [this] (int s, int f) { engine.playNote (fretMidi (s, f), 0.0, 1.5); };
 
-    exercise.onBack = [this] { exercise.setVisible (false); refreshButtons(); resized(); repaint(); };
+    exercise.onBack = [this] { openLesson (current); };
     exercise.onFinished = [this] { refreshButtons(); if (onProgressChanged) onProgressChanged(); };
 
     openLesson (0);
@@ -73,8 +83,52 @@ void TheoryPage::setupDiagram()
     const auto& d = lessons[(size_t) current].diagram;
     diagramStaff.setVisible (false);
     diagramFret.setVisible (false);
+    circle.setVisible (false);
+    diagramStaff.setKeySignature (0);
 
-    if (auto* arr = d["staff"].getArray())
+    if (d.hasProperty ("scale"))
+    {
+        const auto root = parseNote (d["scale"]["root"].toString()).value_or (Note { 0, 0, 3 });
+        const auto notes = scaleNotes (root, scaleType (d["scale"]["type"].toString()));
+        std::vector<juce::Colour> cols (notes.size(), Palette::ink);
+        cols.front() = cols.back() = juce::Colour (0xff9a4a24);   // the root, in brown
+        diagramStaff.setNotes (notes, cols, true);
+        diagramStaff.setStepLabels (juce::StringArray::fromTokens (stepPattern (notes), " ", ""));
+        diagramStaff.setVisible (true);
+    }
+    else if (d.hasProperty ("circle"))
+    {
+        circle.setSelected (0);
+        circle.setVisible (true);
+    }
+    else if (auto* chords = d["chords"].getArray())
+    {
+        std::vector<std::vector<Note>> cs;
+        for (auto& c : *chords)
+        {
+            std::vector<Note> notes;
+            if (auto* a = c.getArray())
+                for (auto& v : *a)
+                    if (auto n = parseNote (v.toString()))
+                        notes.push_back (*n);
+            cs.push_back (notes);
+        }
+        juce::StringArray labels;
+        if (auto* l = d["labels"].getArray())
+            for (auto& v : *l)
+                labels.add (v.toString());
+        diagramStaff.setChords (cs, labels);
+        diagramStaff.setVisible (true);
+    }
+    else if (d.hasProperty ("triadShapes"))
+    {
+        const auto& ts = d["triadShapes"];
+        const auto root = parseNote (ts["root"].toString()).value_or (Note {});
+        diagramFret.setMaxFret (15);
+        diagramFret.setMarks (triadShapeMarks (root, chordType (ts["type"].toString()), (int) ts.getProperty ("top", 1), 15));
+        diagramFret.setVisible (true);
+    }
+    else if (auto* arr = d["staff"].getArray())
     {
         std::vector<Note> notes;
         for (auto& v : *arr)
@@ -144,6 +198,7 @@ void TheoryPage::openExercise (int lessonIndex, int exerciseIndex, juce::int64 s
     for (auto* b : exerciseButtons) b->setVisible (false);
     diagramStaff.setVisible (false);
     diagramFret.setVisible (false);
+    circle.setVisible (false);
     textViewport.setVisible (false);
     exercise.setVisible (true);
     resized();
@@ -169,7 +224,8 @@ void TheoryPage::paint (juce::Graphics& g)
     auto r = getLocalBounds();
     auto left = r.removeFromLeft (330).reduced (12);
     drawPanel (g, left.toFloat());
-    drawHeading (g, juce::String::fromUTF8 ("Level 1 · Foundations"), left.removeFromTop (44).reduced (14, 0), 19.0f);
+    for (auto& [area, title] : levelHeads)
+        drawHeading (g, title, area, 18.0f);
 
     if (exercise.isVisible())
         return;
@@ -187,16 +243,32 @@ void TheoryPage::paint (juce::Graphics& g)
     g.setColour (Palette::dim);
     g.setFont (Fonts::ui (14.0f));
     g.drawFittedText ("8 out of 10 passes an exercise. Pass them all to finish the lesson. Click the neck to hear any note.",
-                      exHead.translated (0, 30 + 50 * (int) l.exercises.size() + 6).withHeight (44), juce::Justification::topLeft, 3);
+                      exHead.translated (0, 30 + exerciseRowHeight * (int) l.exercises.size() + 6).withHeight (44), juce::Justification::topLeft, 3);
 }
 
 void TheoryPage::resized()
 {
     auto r = getLocalBounds();
     auto left = r.removeFromLeft (330).reduced (12);
-    left.removeFromTop (48);
-    for (auto* b : lessonButtons)
-        b->setBounds (left.removeFromTop (52).reduced (8, 4));
+    left.removeFromTop (6);
+    // a heading for each level, then its lessons
+    static const char* levelNames[] = { "", "Level 1 \xc2\xb7 Foundations", "Level 2 \xc2\xb7 Position player", "Level 3 \xc2\xb7 Harmony", "Level 4 \xc2\xb7 Pre-Gleason" };
+    int levels = 0, lastLevel = -1;
+    for (auto& l : lessons)
+        if (l.level != lastLevel) { ++levels; lastLevel = l.level; }
+    const int rowH = juce::jlimit (34, 52, (left.getHeight() - levels * 36) / juce::jmax (1, (int) lessons.size()));
+    levelHeads.clear();
+    lastLevel = -1;
+    for (int i = 0; i < lessonButtons.size(); ++i)
+    {
+        const int level = lessons[(size_t) i].level;
+        if (level != lastLevel)
+        {
+            levelHeads.push_back ({ left.removeFromTop (36).reduced (14, 0), juce::String::fromUTF8 (levelNames[juce::jlimit (0, 4, level)]) });
+            lastLevel = level;
+        }
+        lessonButtons[i]->setBounds (left.removeFromTop (rowH).reduced (8, 3));
+    }
 
     auto right = r.reduced (12);
     if (exercise.isVisible())
@@ -207,8 +279,9 @@ void TheoryPage::resized()
 
     right.removeFromTop (60);
     auto diagram = right.removeFromTop (200);
-    diagramStaff.setBounds (diagram.withSizeKeepingCentre (juce::jmin (diagram.getWidth(), 640), diagram.getHeight()));
+    diagramStaff.setBounds (diagram.withSizeKeepingCentre (juce::jmin (diagram.getWidth(), 720), diagram.getHeight()));
     diagramFret.setBounds (diagram);
+    circle.setBounds (diagram.withSizeKeepingCentre (diagram.getHeight(), diagram.getHeight()));
     right.removeFromTop (12);
 
     auto exCol = right.removeFromRight (juce::jmax (330, right.getWidth() * 2 / 5));
@@ -218,6 +291,7 @@ void TheoryPage::resized()
     text.setSize (right.getWidth() - 14, text.heightForWidth (right.getWidth() - 14));
 
     exCol.removeFromTop (30);
+    exerciseRowHeight = juce::jlimit (36, 50, (exCol.getHeight() - 50) / juce::jmax (1, exerciseButtons.size()));
     for (auto* b : exerciseButtons)
-        b->setBounds (exCol.removeFromTop (50).reduced (0, 4));
+        b->setBounds (exCol.removeFromTop (exerciseRowHeight).reduced (0, 3));
 }

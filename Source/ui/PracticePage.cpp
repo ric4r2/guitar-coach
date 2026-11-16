@@ -117,6 +117,15 @@ void MetronomePanel::timerCallback()
 {
     const int p = engine.getMetronomePulse();
     if (p != shownPulse) { shownPulse = p; repaint(); }
+    // the drills can start the metronome and move the tempo: keep the controls in step
+    const bool on = engine.metronomeOn.load();
+    if (startButton.getToggleState() != on)
+    {
+        startButton.setButtonText (on ? "Stop" : "Start");
+        startButton.setToggleState (on, juce::dontSendNotification);
+    }
+    if (! bpm.isMouseButtonDown() && std::abs (bpm.getValue() - engine.metronomeBpm.load()) > 0.5)
+        bpm.setValue (engine.metronomeBpm.load(), juce::dontSendNotification);
 }
 
 void MetronomePanel::paint (juce::Graphics& g)
@@ -319,13 +328,415 @@ void FretboardExplorer::resized()
     board.setBounds (r);
 }
 
+// ---------------------------------------------------------------- scales and technique
+
+PatternTrainer::PatternTrainer (AudioEngine& e, Progress& p, Mode m) : engine (e), progress (p), mode (m)
+{
+    if (mode == Mode::scales)
+    {
+        for (int pc = 0; pc < 12; ++pc)
+            root.addItem (pcNameBoth (pc), pc + 1);
+        root.setSelectedId (8, juce::dontSendNotification);   // G
+        int id = 1;
+        for (auto& t : scaleTypes())
+            scale.addItem (t.name, id++);
+        scale.setSelectedId (1, juce::dontSendNotification);
+        pattern.addItemList (runPatternNames(), 1);
+        labels.addItemList ({ "Note names", "Scale degrees" }, 1);
+        for (auto* c : { &root, &scale })
+            c->onChange = [this] { rebuildFingerings(); };
+        fingering.onChange = [this] { rebuildTargets(); };
+    }
+    else
+    {
+        pattern.addItemList (techDrillNames(), 1);
+        for (int f = 1; f <= 12; ++f)
+            startFret.addItem ("From fret " + juce::String (f), f + 1);
+        startFret.setSelectedId (6, juce::dontSendNotification);   // fret 5
+        startFret.onChange = [this] { rebuildTargets(); };
+        labels.addItemList ({ "Finger numbers", "Note names" }, 1);
+    }
+    pattern.setSelectedId (mode == Mode::scales ? 2 : 1, juce::dontSendNotification);
+    pattern.onChange = [this] { rebuildTargets(); };
+    labels.setSelectedId (1, juce::dontSendNotification);
+    labels.onChange = [this] { updateMarks(); };
+    notesPerBeat.addItem ("Quarter notes", 1);
+    notesPerBeat.addItem ("Eighth notes", 2);
+    notesPerBeat.addItem ("Triplets", 3);
+    notesPerBeat.addItem ("Sixteenths", 4);
+    notesPerBeat.setSelectedId (mode == Mode::scales ? 1 : 2, juce::dontSendNotification);
+    notesPerBeat.onChange = [this] { repaint(); };
+    ladder.setToggleState (true, juce::dontSendNotification);
+
+    for (juce::Component* c : { (juce::Component*) &root, (juce::Component*) &scale, (juce::Component*) &fingering, (juce::Component*) &pattern,
+                                (juce::Component*) &labels, (juce::Component*) &notesPerBeat, (juce::Component*) &startFret,
+                                (juce::Component*) &ladder, (juce::Component*) &startButton, (juce::Component*) &listenButton })
+        addChildComponent (c);
+    for (juce::Component* c : { (juce::Component*) &pattern, (juce::Component*) &labels, (juce::Component*) &notesPerBeat,
+                                (juce::Component*) &ladder, (juce::Component*) &startButton, (juce::Component*) &listenButton })
+        c->setVisible (true);
+    const std::vector<juce::Component*> modeControls = mode == Mode::scales ? std::vector<juce::Component*> { &root, &scale, &fingering }
+                                                                            : std::vector<juce::Component*> { &startFret };
+    for (auto* c : modeControls)
+        c->setVisible (true);
+
+    startButton.onClick = [this] { if (running) stopRun(); else startRun(); };
+    listenButton.onClick = [this]
+    {
+        engine.stopNotes();
+        const double gap = juce::jmax (0.12, 60.0 / (double) engine.metronomeBpm.load() / npb());
+        std::vector<int> m;
+        for (size_t i = 0; i < targets.size() && i < 60; ++i)
+            m.push_back (targets[i].midi);
+        engine.playSequence (m, gap, gap * 1.5);
+    };
+
+    board.setClickable (true);
+    board.onClick = [this] (int s, int f) { engine.playNote (fretMidi (s, f), 0.0, 1.2); };
+    addAndMakeVisible (board);
+    if (mode == Mode::scales)
+        rebuildFingerings();
+    else
+        rebuildTargets();
+}
+
+const ScaleType& PatternTrainer::currentScale() const
+{
+    return scaleTypes()[(size_t) juce::jlimit (0, (int) scaleTypes().size() - 1, scale.getSelectedId() - 1)];
+}
+
+Note PatternTrainer::rootNote() const
+{
+    // the usual key spelling: flats for D-flat, E-flat, A-flat, B-flat major; sharps for C-sharp, F-sharp, G-sharp minor
+    const int pc = root.getSelectedId() - 1;
+    const bool flats = currentScale().isMinor() ? (pc == 3 || pc == 10) : (pc == 1 || pc == 3 || pc == 8 || pc == 10);
+    auto n = noteFromMidi (48 + mod12 (pc), flats);
+    return n;
+}
+
+void PatternTrainer::select (int rootPc, const juce::String& scaleId, int fingeringIndex, int patternIndex)
+{
+    root.setSelectedId (mod12 (rootPc) + 1, juce::dontSendNotification);
+    for (int i = 0; i < (int) scaleTypes().size(); ++i)
+        if (scaleTypes()[(size_t) i].id == scaleId)
+            scale.setSelectedId (i + 1, juce::dontSendNotification);
+    pattern.setSelectedId (patternIndex + 1, juce::dontSendNotification);
+    rebuildFingerings();
+    fingering.setSelectedId (fingeringIndex + 1, juce::dontSendNotification);
+    rebuildTargets();
+}
+
+void PatternTrainer::rebuildFingerings()
+{
+    const auto& st = currentScale();
+    const int pc = root.getSelectedId() - 1;
+    fingerings = positionFingerings (pc, st);
+    for (auto& f : threeNpsFingerings (pc, st))
+        fingerings.push_back (f);
+    spelling = scaleSpelling (rootNote(), st);
+    fingering.clear (juce::dontSendNotification);
+    for (int i = 0; i < (int) fingerings.size(); ++i)
+        fingering.addItem (fingerings[(size_t) i].name, i + 1);
+    fingering.setSelectedId (1, juce::dontSendNotification);
+    rebuildTargets();
+}
+
+void PatternTrainer::rebuildTargets()
+{
+    stopRun();
+    result.clear();
+    if (mode == Mode::scales)
+    {
+        const int i = juce::jlimit (0, (int) fingerings.size() - 1, fingering.getSelectedId() - 1);
+        targets = fingerings.empty() ? std::vector<FretNote>() : scaleRun (fingerings[(size_t) i], (RunPattern) (pattern.getSelectedId() - 1));
+    }
+    else
+        targets = techniqueDrill ((TechDrill) (pattern.getSelectedId() - 1), startFret.getSelectedId() - 1);
+
+    int high = 12;
+    for (auto& t : targets)
+        high = juce::jmax (high, t.fret + 1);
+    board.setMaxFret (juce::jmax (15, high));
+    updateMarks();
+}
+
+juce::String PatternTrainer::label (const FretNote& n) const
+{
+    if (mode == Mode::technique)
+        return labels.getSelectedId() == 1 ? juce::String (n.degree) : noteFromMidi (n.midi).name();
+    if (labels.getSelectedId() == 2)
+        return n.degree == 0 ? juce::String ("R") : degreeLabel (currentScale().intervals[(size_t) n.degree]);
+    return spelling[(size_t) mod12 (n.midi)];
+}
+
+void PatternTrainer::updateMarks()
+{
+    std::vector<FretMark> marks;
+    // every position used, once
+    for (auto& t : targets)
+    {
+        bool seen = false;
+        for (auto& m : marks)
+            seen = seen || (m.string == t.string && m.fret == t.fret);
+        if (! seen)
+            marks.push_back ({ t.string, t.fret, label (t), mode == Mode::scales && t.degree == 0 ? 1 : 0 });
+    }
+    if (running && pos < (int) targets.size())
+    {
+        const auto& t = targets[(size_t) pos];
+        marks.push_back ({ t.string, t.fret, label (t), 4 });
+    }
+    if (juce::Time::getMillisecondCounter() < flashUntil)
+        marks.insert (marks.end(), flashMarks.begin(), flashMarks.end());
+    board.setMarks (marks);
+    repaint();
+}
+
+juce::String PatternTrainer::drillKey() const
+{
+    if (mode == Mode::scales)
+        return "scale/" + currentScale().id + "/" + juce::String (pattern.getSelectedId()) + "/" + juce::String (npb());
+    return "tech/" + juce::String (pattern.getSelectedId()) + "/" + juce::String (npb());
+}
+
+void PatternTrainer::startRun()
+{
+    if (targets.empty())
+        return;
+    if (ladder.getToggleState())
+        engine.metronomeOn.store (true);
+    running = true;
+    pos = 0;
+    mistakes = 0;
+    times.clear();
+    result.clear();
+    startButton.setButtonText ("Stop");
+    startTimerHz (15);
+    updateMarks();
+}
+
+void PatternTrainer::stopRun()
+{
+    running = false;
+    startButton.setButtonText ("Start");
+    stopTimer();
+}
+
+void PatternTrainer::finishRun (double bpmOverride)
+{
+    stopRun();
+    const bool metro = engine.metronomeOn.load() || bpmOverride > 0;
+    const double bpm = bpmOverride > 0 ? bpmOverride : (double) engine.metronomeBpm.load();
+    const auto s = scoreRun (times, mistakes, metro ? bpm : 0.0, npb());
+    const juce::String dot = juce::String::fromUTF8 ("  \xc2\xb7  ");
+    result = juce::String (juce::roundToInt (s.accuracy * 100)) + "% right notes (" + juce::String (mistakes) + " wrong"
+           + ")" + dot + "timing " + juce::String (juce::roundToInt (s.evenness * 100)) + "% even" + dot + "you played at about "
+           + juce::String (juce::roundToInt (s.averageBpm)) + " BPM";
+    if (s.clean)
+    {
+        resultColour = Palette::green;
+        result = "Clean run! " + result + ".";
+        if (metro)
+        {
+            progress.recordTempo (drillKey(), bpm);
+            if (ladder.getToggleState() && bpmOverride <= 0)
+            {
+                engine.metronomeBpm.store ((float) juce::jmin (260.0, bpm + 5.0));
+                result << " Tempo up to " << juce::roundToInt (bpm + 5.0) << " BPM.";
+            }
+        }
+    }
+    else
+    {
+        resultColour = Palette::gold;
+        const bool sloppy = s.accuracy < 0.85;
+        result << (sloppy ? ". Too many wrong notes: slow down until only 1 in 10 or 20 is wrong." : ". Nearly: play it again at this tempo.");
+        if (sloppy && metro && ladder.getToggleState() && bpmOverride <= 0)
+        {
+            engine.metronomeBpm.store ((float) juce::jmax (30.0, bpm - 5.0));
+            result << " Tempo down to " << juce::roundToInt (bpm - 5.0) << " BPM.";
+        }
+    }
+    updateMarks();
+}
+
+void PatternTrainer::notePlayed (const NoteEvent& e)
+{
+    if (! running || pos >= (int) targets.size())
+        return;
+    const auto& want = targets[(size_t) pos];
+    if (e.midi == want.midi)
+    {
+        times.push_back (e.time);
+        flashMarks = { { want.string, want.fret, label (want), 2 } };
+        flashUntil = juce::Time::getMillisecondCounter() + 250;
+        if (++pos >= (int) targets.size())
+            finishRun();
+        else
+            updateMarks();
+        return;
+    }
+    // the note just played, heard again straight away, is the same pluck: ignore it
+    if (pos > 0 && e.midi == targets[(size_t) pos - 1].midi && ! times.empty() && e.time - times.back() < 0.15)
+        return;
+    ++mistakes;
+    // show the wrong note where it is closest to the target
+    FretPos best { want.string, want.fret };
+    int dist = 99;
+    for (auto& p : positionsOf (e.midi, board.getMaxFret()))
+        if (std::abs (p.fret - want.fret) + std::abs (p.string - want.string) < dist)
+        {
+            dist = std::abs (p.fret - want.fret) + std::abs (p.string - want.string);
+            best = p;
+        }
+    flashMarks = { { best.string, best.fret, noteFromMidi (e.midi).name(), 3 } };
+    flashUntil = juce::Time::getMillisecondCounter() + 600;
+    updateMarks();
+}
+
+void PatternTrainer::simulateRun (int hits, int wrong, double bpm)
+{
+    startRun();
+    const double gap = 60.0 / bpm / npb();
+    for (int i = 0; i < hits && running; ++i)
+    {
+        if (i == 3)
+            mistakes += wrong;
+        times.push_back (i * gap + 0.05 * gap * ((i % 3) - 1));   // on the beat, give or take 5%
+        if (++pos >= (int) targets.size())
+            finishRun (bpm);
+    }
+    updateMarks();
+}
+
+void PatternTrainer::pitchChanged (const PitchFrame& f)
+{
+    board.setLiveMidi (f.valid ? juce::roundToInt (f.midi) : -1);
+}
+
+void PatternTrainer::timerCallback()
+{
+    if (flashUntil != 0 && juce::Time::getMillisecondCounter() >= flashUntil)
+    {
+        flashUntil = 0;
+        updateMarks();
+    }
+}
+
+void PatternTrainer::paint (juce::Graphics& g)
+{
+    drawPanel (g, getLocalBounds().toFloat());
+    auto inner = getLocalBounds().reduced (16, 10);
+    drawHeading (g, mode == Mode::scales ? "Scales" : "Technique", inner.removeFromTop (30), 19.0f);
+
+    auto status = juce::Rectangle<int> (inner.getX(), board.getBottom() + 4, inner.getWidth(), getHeight() - board.getBottom() - 10);
+    const juce::String dot = juce::String::fromUTF8 ("   \xc2\xb7   ");
+    const double best = progress.bestTempo (drillKey());
+    const auto bestText = best > 0 ? "best clean tempo " + juce::String (juce::roundToInt (best)) + " BPM" : juce::String ("no clean run yet");
+    g.setFont (Fonts::ui (17.0f));
+    if (running && pos < (int) targets.size())
+    {
+        const auto& t = targets[(size_t) pos];
+        g.setColour (Palette::blue);
+        g.drawText ("Play " + noteFromMidi (t.midi).name (true) + " (" + stringName (t.string) + ", fret " + juce::String (t.fret) + ")" + dot
+                        + "note " + juce::String (pos + 1) + " of " + juce::String ((int) targets.size()) + dot + juce::String (mistakes) + " wrong",
+                    status.removeFromTop (26), juce::Justification::centredLeft);
+    }
+    else if (result.isNotEmpty())
+    {
+        g.setColour (resultColour);
+        g.drawFittedText (result, status.removeFromTop (44), juce::Justification::topLeft, 2);
+    }
+    else
+    {
+        g.setColour (Palette::dim);
+        g.drawFittedText (mode == Mode::scales
+                              ? "Pick a scale and a fingering, turn the metronome on, press Start and play each note as it lights up in blue."
+                              : "One finger per fret. Keep fingers close to the strings, and pick strictly down-up. Press Start and play each note as it lights up.",
+                          status.removeFromTop (44), juce::Justification::topLeft, 2);
+    }
+    g.setColour (Palette::dim);
+    g.setFont (Fonts::ui (14.0f));
+    g.drawText (juce::String ((int) targets.size()) + " notes" + dot + juce::String (juce::roundToInt (engine.metronomeBpm.load())) + " BPM, "
+                    + notesPerBeat.getText().toLowerCase() + (engine.metronomeOn.load() ? juce::String() : " (metronome off)") + dot + bestText,
+                status.removeFromBottom (20), juce::Justification::centredLeft);
+}
+
+void PatternTrainer::resized()
+{
+    auto r = getLocalBounds().reduced (16, 10);
+    auto top = r.removeFromTop (30);
+    top.removeFromLeft (120);
+    auto row2 = r.removeFromTop (38).withTrimmedTop (6);
+    if (mode == Mode::scales)
+    {
+        root.setBounds (top.removeFromLeft (100).reduced (2));
+        scale.setBounds (top.removeFromLeft (170).reduced (2));
+        fingering.setBounds (top.removeFromLeft (250).reduced (2));
+        pattern.setBounds (top.removeFromLeft (190).reduced (2));
+    }
+    else
+    {
+        pattern.setBounds (top.removeFromLeft (230).reduced (2));
+        startFret.setBounds (top.removeFromLeft (140).reduced (2));
+    }
+    labels.setBounds (row2.removeFromLeft (150).reduced (2));
+    notesPerBeat.setBounds (row2.removeFromLeft (150).reduced (2));
+    row2.removeFromLeft (8);
+    ladder.setBounds (row2.removeFromLeft (310));
+    startButton.setBounds (row2.removeFromRight (120).reduced (2, 0));
+    row2.removeFromRight (8);
+    listenButton.setBounds (row2.removeFromRight (100).reduced (2, 0));
+    r.removeFromTop (6);
+    r.removeFromBottom (68);
+    board.setBounds (r);
+}
+
 // ---------------------------------------------------------------- page
 
-PracticePage::PracticePage (AudioEngine& e, Progress& p) : metronome (e), explorer (e, p)
+PracticePage::PracticePage (AudioEngine& e, Progress& p)
+    : metronome (e), explorer (e, p), scales (e, p, PatternTrainer::Mode::scales), technique (e, p, PatternTrainer::Mode::technique)
 {
     addAndMakeVisible (tuner);
     addAndMakeVisible (metronome);
     addAndMakeVisible (explorer);
+    addChildComponent (scales);
+    addChildComponent (technique);
+    const char* names[] = { "Fretboard", "Scales", "Technique" };
+    for (int i = 0; i < 3; ++i)
+    {
+        tabButtons[i].setButtonText (names[i]);
+        tabButtons[i].setRadioGroupId (2);
+        tabButtons[i].setClickingTogglesState (true);
+        tabButtons[i].onClick = [this, i] { showTab (i); };
+        addAndMakeVisible (tabButtons[i]);
+    }
+    showTab (fretboardTab);
+}
+
+void PracticePage::showTab (int tab)
+{
+    currentTab = tab;
+    explorer.setVisible (tab == fretboardTab);
+    scales.setVisible (tab == scalesTab);
+    technique.setVisible (tab == techniqueTab);
+    for (int i = 0; i < 3; ++i)
+        tabButtons[i].setToggleState (i == tab, juce::dontSendNotification);
+}
+
+void PracticePage::notePlayed (const NoteEvent& e)
+{
+    if (currentTab == fretboardTab) explorer.notePlayed (e);
+    else if (currentTab == scalesTab) scales.notePlayed (e);
+    else technique.notePlayed (e);
+}
+
+void PracticePage::pitchChanged (const PitchFrame& f)
+{
+    tuner.setPitch (f);
+    if (currentTab == fretboardTab) explorer.pitchChanged (f);
+    else if (currentTab == scalesTab) scales.pitchChanged (f);
+    else technique.pitchChanged (f);
 }
 
 void PracticePage::paint (juce::Graphics&) {}
@@ -333,10 +744,16 @@ void PracticePage::paint (juce::Graphics&) {}
 void PracticePage::resized()
 {
     auto r = getLocalBounds().reduced (12);
-    auto top = r.removeFromTop (230);
+    auto top = r.removeFromTop (196);
     tuner.setBounds (top.removeFromLeft (top.getWidth() / 2 - 6));
     top.removeFromLeft (12);
     metronome.setBounds (top);
-    r.removeFromTop (12);
+    r.removeFromTop (8);
+    auto tabs = r.removeFromTop (38);
+    for (auto& b : tabButtons)
+        b.setBounds (tabs.removeFromLeft (140).reduced (2, 2));
+    r.removeFromTop (6);
     explorer.setBounds (r);
+    scales.setBounds (r);
+    technique.setBounds (r);
 }

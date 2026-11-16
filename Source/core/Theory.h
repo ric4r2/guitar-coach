@@ -66,4 +66,46 @@ namespace theory
 
     // Half and whole steps between two pitches: 1 = half, 2 = whole, other = neither
     juce::String stepName (int semitones);
+
+    // ---------------------------------------------------------------- scales and keys
+    struct ScaleType
+    {
+        juce::String id, name;
+        std::vector<Interval> intervals;   // from the root, ascending, without the octave
+        bool isMinor() const;              // has a minor 3rd: its relative major is 3 semitones up
+        int size() const { return (int) intervals.size(); }
+    };
+
+    // major, naturalMinor, harmonicMinor, melodicMinor, majorPentatonic, minorPentatonic, blues
+    const std::vector<ScaleType>& scaleTypes();
+    const ScaleType& scaleType (const juce::String& id);              // unknown ids give major
+    std::vector<Note> scaleNotes (const Note& root, const ScaleType&, bool withOctave = true);
+    juce::String degreeLabel (const Interval&);                       // "1", "b3", "#4"
+    juce::String stepPattern (const std::vector<Note>& ascending);     // "W W H W W W H"
+
+    // Key signatures as positions on the circle of fifths: +3 = three sharps, -2 = two flats.
+    int keyFifths (const Note& tonic, bool minor);                    // may go past 7 for theoretical keys
+    Note keyTonic (int fifths, bool minor);                           // -7..7, octave 4
+    juce::String keyName (int fifths, bool minor);                    // "E♭ major", "C♯ minor"
+    std::vector<Note> keySignature (int fifths);                       // the sharps or flats, in order
+    juce::String keySignatureText (int fifths);                       // "3 sharps: F♯ C♯ G♯"
+    juce::String fifthsLabel (int fifths);                            // "3♯", "2♭", "0"
+
+    // ---------------------------------------------------------------- triads
+    struct ChordType
+    {
+        juce::String id, name, symbol;     // "minor", "m"
+        std::vector<Interval> intervals;
+    };
+    const std::vector<ChordType>& triadTypes();                        // major, minor, diminished, augmented
+    const ChordType& chordType (const juce::String& id);
+    std::vector<Note> chordNotes (const Note& root, const ChordType&);  // root position, close
+    std::vector<Note> invert (std::vector<Note> rootPosition, int inversion);   // lowest notes go up an octave
+    juce::String chordName (const Note& root, const ChordType&);       // "C♯ minor"
+    juce::String chordSymbol (const Note& root, const ChordType&);     // "C♯m"
+    juce::String inversionName (int inversion);                        // "root position", "1st inversion"
+    juce::String chordToneLabel (int index, const ChordType&);         // "R", "3", "b3", "5", "b5", "#5"
+
+    // a note an octave higher or lower
+    inline Note octaveShift (Note n, int octaves) { n.octave += octaves; return n; }
 }

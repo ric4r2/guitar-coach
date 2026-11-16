@@ -10,6 +10,7 @@ struct NoteEvent
     int midi = 0;
     float cents = 0.0f;   // how far off the equal-tempered pitch
     float hz = 0.0f;
+    double time = 0.0;    // seconds of input since the analyzer started, for timing between notes
 };
 
 // Latest reading of the input, for meters and the tuner.

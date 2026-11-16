@@ -19,6 +19,9 @@ public:
     void recordDrill (const juce::String& key, double value);   // e.g. seconds per note: lower is better
     double bestDrill (const juce::String& key) const;          // -1 when never done
 
+    void recordTempo (const juce::String& key, double bpm);      // fastest clean tempo: higher is better
+    double bestTempo (const juce::String& key) const;           // 0 when never done
+
     void markPracticeToday();
     int streakDays() const;
     int totalExercisesDone() const;

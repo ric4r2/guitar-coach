@@ -31,6 +31,7 @@ public:
     // for the snapshot tool: answer the current question with the right or a wrong choice
     void simulateChoice (bool correct);
     void simulateFinish (int score);
+    void simulateSequence (int notes);   // give the next notes of a sequence answer, correctly
 
     void paint (juce::Graphics&) override;
     void resized() override;
@@ -55,7 +56,8 @@ private:
     juce::TextButton backButton { "< Lesson" }, listenButton { "Listen" }, nextButton { "Next" }, againButton { "Try again" };
     juce::TextButton flatButton, naturalButton, sharpButton;
     juce::OwnedArray<juce::TextButton> choiceButtons;
-    std::vector<FretMark> wrongMarks;
+    std::vector<FretMark> wrongMarks, enteredMarks;
+    int seqPos = 0;   // next note of a sequence answer
 
     void nextQuestion();
     void showQuestion();
@@ -64,4 +66,8 @@ private:
     void finish();
     void timerCallback() override;
     void updateButtons();
+    void playListen();
+    void showSequenceSoFar();
+    void sequenceAnswer (bool ok, const juce::String& wrongText);
+    bool sequenceMatches (int midi) const;
 };

@@ -21,6 +21,7 @@ juce_add_binary_data(GuitarCoachContent SOURCES Content/lessons.json)
 # Everything that is not UI: music theory, pitch detection, synth voices, lessons and progress.
 set(CORE_SOURCES
     Source/core/Theory.cpp
+    Source/core/Fingerings.cpp
     Source/core/InputAnalyzer.cpp
     Source/core/Lessons.cpp
     Source/core/Progress.cpp)
