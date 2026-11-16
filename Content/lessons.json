@@ -1340,6 +1340,682 @@
       ]
     },
     {
+      "id": "L17-modes",
+      "level": 4,
+      "strand": "Scales",
+      "title": "The modes of the major scale",
+      "summary": "Seven scales from one: start the major scale on each of its notes.",
+      "body": [
+        "## One set of notes, seven homes",
+        "Play the C major scale but start and stop on D: D E F G A B C D. The notes are the same, but D now feels like home and the sound changes completely. Each starting note gives a mode:",
+        "- Ionian (from the 1st): the major scale. 1 2 3 4 5 6 7",
+        "- Dorian (from the 2nd): minor with a natural 6. 1 2 b3 4 5 6 b7",
+        "- Phrygian (from the 3rd): minor with a b2. 1 b2 b3 4 5 b6 b7",
+        "- Lydian (from the 4th): major with a #4. 1 2 3 #4 5 6 7",
+        "- Mixolydian (from the 5th): major with a b7. 1 2 3 4 5 6 b7",
+        "- Aeolian (from the 6th): natural minor. 1 2 b3 4 5 b6 b7",
+        "- Locrian (from the 7th): diminished, with b2 and b5. 1 b2 b3 4 b5 b6 b7",
+        "## Two ways to think",
+        "As a parent scale: A Dorian has the notes of G major, because A is the 2nd degree of G. As a formula: Dorian is natural minor with a raised 6th. Players use both: the parent scale tells you the fingering, the formula tells you the sound.",
+        "## Which mode for which chord",
+        "Each mode matches the chord built on its degree: Ionian over Imaj7, Dorian over IIm7, Mixolydian over V7, Aeolian over VIm7, Lydian over IVmaj7, Locrian over VIIm7b5. In a II-V-I in C, all three are just C major, started from different notes.",
+        "## On the guitar",
+        "Each CAGED shape of the major scale already contains every mode: you change the mode by changing which note you treat as home. In Practice > Scales, pick Dorian or Mixolydian to see the shapes with their own root."
+      ],
+      "diagram": {
+        "scale": {
+          "root": "D3",
+          "type": "dorian"
+        }
+      },
+      "exercises": [
+        {
+          "type": "modeName",
+          "title": "Which mode is it?"
+        },
+        {
+          "type": "modeParent",
+          "title": "Find the parent major scale"
+        },
+        {
+          "type": "spellScale",
+          "title": "Spell Dorian scales",
+          "scale": "dorian",
+          "roots": [
+            "D",
+            "A",
+            "E",
+            "G",
+            "C"
+          ]
+        },
+        {
+          "type": "spellScale",
+          "title": "Spell Lydian scales",
+          "scale": "lydian",
+          "roots": [
+            "F",
+            "C",
+            "G",
+            "Bb",
+            "D"
+          ]
+        },
+        {
+          "type": "earScale",
+          "title": "Ear: major, Mixolydian, Dorian or minor?",
+          "set": [
+            "major",
+            "mixolydian",
+            "dorian",
+            "naturalMinor"
+          ]
+        },
+        {
+          "type": "earScale",
+          "title": "Ear: all seven modes",
+          "set": [
+            "major",
+            "dorian",
+            "phrygian",
+            "lydian",
+            "mixolydian",
+            "naturalMinor",
+            "locrian"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "L18-arpeggios",
+      "level": 4,
+      "strand": "Fretboard",
+      "title": "Seventh-chord arpeggios across the neck",
+      "summary": "Play just the chord tones, in every position: the skeleton under every line.",
+      "body": [
+        "## Arpeggios",
+        "An arpeggio is a chord played one note at a time. Over a chord, its arpeggio is the safest and strongest thing you can play, because every note belongs to the chord. Gleason builds whole solos from arpeggios and scale fragments around them.",
+        "## Four shapes per chord type",
+        "A seventh chord has four notes, so its arpeggio repeats every four notes across the neck. Like the pentatonic boxes, each position starts from one of its notes on the 6th string. Learn the four types: maj7 (1 3 5 7), 7 (1 3 5 b7), m7 (1 b3 5 b7) and m7b5 (1 b3 b5 b7).",
+        "## Know the numbers",
+        "Do not learn arpeggios as dots. Know which dot is the root, the 3rd, the 5th and the 7th, so you can aim for the 3rd and 7th when the chord changes, and move the shape into any key.",
+        "## How to practise",
+        "In Practice > Scales, pick an arpeggio and a box and play it up and down with the metronome, saying the numbers. Then play the arpeggios of a II-V-I in one position without moving your hand: Dm7, G7 and Cmaj7 all fit around the 5th fret."
+      ],
+      "diagram": {
+        "box": {
+          "root": "G",
+          "scale": "arpDom7",
+          "index": 0
+        }
+      },
+      "exercises": [
+        {
+          "type": "boxDegree",
+          "title": "Degrees in dominant 7 arpeggios",
+          "scale": "arpDom7",
+          "roots": [
+            "G",
+            "A",
+            "C",
+            "D",
+            "E"
+          ]
+        },
+        {
+          "type": "boxDegree",
+          "title": "Degrees in minor 7 arpeggios",
+          "scale": "arpMin7",
+          "roots": [
+            "A",
+            "D",
+            "E",
+            "G"
+          ]
+        },
+        {
+          "type": "boxDegree",
+          "title": "Degrees in maj7 arpeggios",
+          "scale": "arpMaj7",
+          "roots": [
+            "C",
+            "F",
+            "G",
+            "D"
+          ]
+        },
+        {
+          "type": "playTriad",
+          "title": "Play the arpeggio: R 3 5 7",
+          "set": [
+            "major7",
+            "dominant7",
+            "minor7"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "L19-twoFive",
+      "level": 4,
+      "strand": "Harmony",
+      "title": "II-V-I in every key, and guide tones",
+      "summary": "The progression that runs jazz, and the two notes that carry it.",
+      "body": [
+        "## In every key",
+        "Gleason's harmony is built on II-V-Is, often several in a row in different keys. You need to find IIm7, V7 and Imaj7 in any key without thinking. The fast way: the V7 is a 5th above the I, and the IIm7 is a 5th above the V.",
+        "- C: Dm7 G7 Cmaj7",
+        "- F: Gm7 C7 Fmaj7",
+        "- B♭: Cm7 F7 B♭maj7",
+        "- E♭: Fm7 B♭7 E♭maj7",
+        "## Guide tones",
+        "The 3rd and the 7th of each chord are its guide tones. In a II-V-I, the 7th of each chord falls a half step to the 3rd of the next one, while the 3rd stays and becomes the next 7th. Two voices moving by the smallest steps outline the whole progression.",
+        "## On the guitar",
+        "On the top strings the guide tones are two-note shapes a few frets apart. Play the root on the 6th or 5th string with the 3rd and 7th above it: that three-note voicing is how jazz guitarists comp, and how Gleason introduces chord shapes.",
+        "## Hearing it",
+        "IIm7 sounds like a gentle move away, V7 like a question, Imaj7 like the answer. In tunes the I is often skipped and the II-V moves on to the next key: listen for the bass climbing by 4ths."
+      ],
+      "diagram": {
+        "chords": [
+          [
+            "D3",
+            "F3",
+            "A3",
+            "C4"
+          ],
+          [
+            "G3",
+            "B3",
+            "D4",
+            "F4"
+          ],
+          [
+            "C3",
+            "E3",
+            "G3",
+            "B3"
+          ]
+        ],
+        "labels": [
+          "Dm7",
+          "G7",
+          "Cmaj7"
+        ]
+      },
+      "exercises": [
+        {
+          "type": "twoFiveOne",
+          "title": "II-V-I in any key"
+        },
+        {
+          "type": "guideTone",
+          "title": "Where does the 7th go?"
+        },
+        {
+          "type": "progressionName",
+          "title": "Name the progression (7th chords)",
+          "sevenths": true,
+          "roots": [
+            "C",
+            "F",
+            "Bb",
+            "Eb",
+            "G",
+            "D",
+            "Ab"
+          ]
+        },
+        {
+          "type": "earProgression",
+          "title": "Ear: II-V-I and its relatives",
+          "sevenths": true
+        }
+      ]
+    },
+    {
+      "id": "L20-secondary",
+      "level": 4,
+      "strand": "Harmony",
+      "title": "Secondary dominants and borrowed chords",
+      "summary": "Chords from outside the key: dominants of other chords, and colours from the minor key.",
+      "body": [
+        "## Secondary dominants",
+        "Any chord of the key can have its own dominant: the dominant 7th chord a 5th above it. In C major, A7 leads to Dm (the ii), so it is called V7 of ii, written V7/ii. E7 leads to Am, so it is V7/vi. D7 leads to G, so it is V7/V.",
+        "Each of them contains one note from outside the key, the 3rd of the secondary dominant (C♯ in A7, G♯ in E7, F♯ in D7). That note leads up a half step to the root of the target chord.",
+        "The VI7 in bar 8 of a jazz blues is a secondary dominant: V7 of the II that follows.",
+        "## Borrowed chords",
+        "A major key can borrow chords from its parallel minor (the minor key with the same root). In C major, from C minor:",
+        "- iv (Fm): sad and nostalgic, often right after the IV.",
+        "- bVII (B♭): the rock and Mixolydian sound.",
+        "- bVI (A♭) and bIII (E♭): big and cinematic.",
+        "This is called modal interchange. The borrowed chord does not change the key; it just colours it for a moment.",
+        "## Hearing them",
+        "A secondary dominant sounds like the music suddenly leans towards another chord. A borrowed chord sounds like a cloud passing in front of the sun."
+      ],
+      "diagram": {
+        "chords": [
+          [
+            "A3",
+            "C#4",
+            "E4",
+            "G4"
+          ],
+          [
+            "D3",
+            "F3",
+            "A3"
+          ],
+          [
+            "E3",
+            "G#3",
+            "B3",
+            "D4"
+          ],
+          [
+            "A3",
+            "C4",
+            "E4"
+          ]
+        ],
+        "labels": [
+          "A7 = V7/ii",
+          "Dm",
+          "E7 = V7/vi",
+          "Am"
+        ]
+      },
+      "exercises": [
+        {
+          "type": "secondaryDominant",
+          "title": "Secondary dominants in C, G and F",
+          "roots": [
+            "C",
+            "G",
+            "F"
+          ]
+        },
+        {
+          "type": "secondaryDominant",
+          "title": "Secondary dominants in more keys",
+          "roots": [
+            "C",
+            "G",
+            "F",
+            "D",
+            "Bb"
+          ]
+        },
+        {
+          "type": "borrowedChord",
+          "title": "Borrowed from the minor key"
+        }
+      ]
+    },
+    {
+      "id": "L21-tensions",
+      "level": 4,
+      "strand": "Harmony",
+      "title": "Tensions and the tritone substitute",
+      "summary": "The colour notes above the 7th, and how one dominant can stand in for another.",
+      "body": [
+        "## Tensions",
+        "Keep stacking 3rds above a seventh chord and you get the 9th, 11th and 13th: the 2nd, 4th and 6th an octave higher. They are called tensions, and they give jazz chords their colour. C9 is C7 with a D on top; Cmaj9 is Cmaj7 with a D; C13 is C7 with an A.",
+        "## Altered tensions on dominants",
+        "Dominant chords can also take raised or lowered tensions, because they are already full of tension and will resolve anyway:",
+        "- b9 and #9: a half step above or below the 9 (D♭ and D♯ on C7).",
+        "- #11: a half step above the 11 (F♯ on C7), the Lydian sound.",
+        "- b13: a half step below the 13 (A♭ on C7).",
+        "Over V7 going to a minor chord, b9 and b13 are the natural choice: they come from the harmonic minor scale of the key.",
+        "## The tritone substitute",
+        "G7 and D♭7 share the same tritone: B and F in G7, F and C♭ (= B) in D♭7. So D♭7 can replace G7 in a II-V-I: Dm7, D♭7, Cmaj7. The bass now slides down by half steps. This is the tritone substitution, the most common reharmonisation in jazz.",
+        "## Harmonic and melodic minor",
+        "Minor-key harmony uses harmonic minor for its V7 (the raised 7th makes the V a dominant) and melodic minor for its modern sounds. You built both scales in Level 2; Gleason uses them for the minor II-V-I: IIm7b5, V7(b9), Im."
+      ],
+      "diagram": {
+        "chords": [
+          [
+            "C3",
+            "E3",
+            "G3",
+            "Bb3",
+            "D4"
+          ],
+          [
+            "C3",
+            "E3",
+            "G3",
+            "Bb3",
+            "Db4"
+          ],
+          [
+            "C3",
+            "E3",
+            "Bb3",
+            "D4",
+            "A4"
+          ]
+        ],
+        "labels": [
+          "C9",
+          "C7b9",
+          "C13"
+        ]
+      },
+      "exercises": [
+        {
+          "type": "tensionNote",
+          "title": "Name the tension"
+        },
+        {
+          "type": "tritoneSub",
+          "title": "Tritone substitutes"
+        },
+        {
+          "type": "spellScale",
+          "title": "Spell melodic minor scales",
+          "scale": "melodicMinor",
+          "roots": [
+            "A",
+            "D",
+            "E",
+            "G",
+            "C"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "L22-octaves",
+      "level": 4,
+      "strand": "Fretboard",
+      "title": "Thinking in numbers and the five octave shapes",
+      "summary": "Find any note in five shapes, and think of everything as a number from the key.",
+      "body": [
+        "## Numbers, not letters",
+        "Gleason asks you to think of every note as a number from the key: in G, B is 3 and F♯ is 7; in E♭, C is 6. Once a phrase is numbers, it works in every key. Practise saying the numbers of everything you play.",
+        "## Five octave shapes",
+        "Every note appears in the same five octave shapes all over the neck. They are named after the open chords they come from:",
+        "- E shape: root on the 6th string, octave on the 4th string two frets higher (and again on the 1st string, same fret as the 6th).",
+        "- D shape: root on the 4th string, octave on the 2nd string three frets higher.",
+        "- C shape: root on the 5th string, octave on the 2nd string two frets lower.",
+        "- A shape: root on the 5th string, octave on the 3rd string two frets higher.",
+        "- G shape: root on the 6th string, octave on the 3rd string three frets lower.",
+        "Linked together, the five shapes cover the whole neck for one note. They are the frame for the CAGED scale shapes and for Gleason's octave-shape fingerings, which come in two versions he calls forward slash and back slash.",
+        "## How to practise",
+        "Pick a note. Find it in all five shapes, from the lowest position up, saying the shape names. Then do it with a different note every day."
+      ],
+      "diagram": {
+        "fretboard": "naturals",
+        "strings": [
+          6,
+          4,
+          1
+        ],
+        "maxFret": 12
+      },
+      "exercises": [
+        {
+          "type": "octaveShape",
+          "title": "Name the octave shape"
+        },
+        {
+          "type": "findOctave",
+          "title": "Find the octave"
+        },
+        {
+          "type": "scaleDegree",
+          "title": "Numbers in any key",
+          "scale": "major",
+          "roots": [
+            "C",
+            "G",
+            "D",
+            "A",
+            "E",
+            "F",
+            "Bb",
+            "Eb",
+            "Ab"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "L23-cells",
+      "level": 4,
+      "strand": "Improvisation",
+      "title": "Cells and melodic dictation",
+      "summary": "Short melodic cells named by numbers, played in any key, and melodies by ear.",
+      "body": [
+        "## Cells",
+        "A cell is a short group of three or four notes, named by its numbers: 1-2-3-5, 5-6-1-2, 3-5-6-1. Gleason builds improvisation from cells like these, combined with rhythmic words: a cell gives the notes, a word gives the rhythm. Learning a cell as numbers means you can play it over any chord and in any key.",
+        "## Playing cells over chords",
+        "The cell 1-2-3-5 is the root of a major chord climbing to its 5th. Played from the 4th of the key it fits the IV chord; from the 5th it fits the V. Move the same numbers to each chord of a progression and you are playing the changes.",
+        "## Melodic dictation",
+        "Hearing a melody and knowing its numbers is the skill that lets you play what you hear. Start with short melodies that begin on the root and move by steps and small skips. Sing them back first, then name the numbers, then play them.",
+        "## How to practise",
+        "Choose one cell a week. Play it in every key around the circle of fifths, then over a 12-bar blues on each chord, then put it in a rhythm cell from Level 3."
+      ],
+      "diagram": {
+        "scale": {
+          "root": "C3",
+          "type": "majorPentatonic"
+        }
+      },
+      "exercises": [
+        {
+          "type": "playCell",
+          "title": "Play the cell in any key"
+        },
+        {
+          "type": "earMelody",
+          "title": "Melodic dictation: 3 notes",
+          "notes": 3
+        },
+        {
+          "type": "earMelody",
+          "title": "Melodic dictation: 5 notes",
+          "notes": 5
+        }
+      ]
+    },
+    {
+      "id": "L24-readiness",
+      "level": 4,
+      "strand": "Readiness",
+      "title": "Readiness quiz for Gleason's book",
+      "summary": "Mixed quizzes on what Part 1 of Guitar Improv & Comping expects you to know.",
+      "body": [
+        "## Are you ready?",
+        "Gleason says his book is not for beginners and asks for about a year of basic study first. These quizzes check the skills his first chapters take for granted. Pass all four with 8 out of 10, on two different days, and you are ready to start Part 1.",
+        "- Fretboard and reading: name any fret, read notes with sharps and flats, play what you read.",
+        "- Intervals and ears: intervals by sound and by shape, chord qualities by ear, progressions by ear.",
+        "- Harmony: triads and seventh chords, chords of a key by number, II-V-I in every key.",
+        "- Blues and rhythm: the 12-bar form, pentatonic boxes, rhythm cells and rhythm reading.",
+        "## If a quiz goes badly",
+        "The feedback after each question tells you which lesson to go back to. Do not just repeat the quiz: redo that lesson's exercises for a few days, then try again.",
+        "## When you start the book",
+        "Keep using GuitarCoach next to it: the backing tracks for every exercise, the metronome and tempo ladder for technique, and the Practice tab for the scale and arpeggio shapes Gleason refers to."
+      ],
+      "diagram": {
+        "circle": true
+      },
+      "exercises": [
+        {
+          "type": "mixed",
+          "title": "Readiness: fretboard and reading",
+          "from": [
+            {
+              "type": "nameFret",
+              "strings": [
+                6,
+                5,
+                4,
+                3,
+                2,
+                1
+              ],
+              "maxFret": 12,
+              "accidentals": true
+            },
+            {
+              "type": "nameStaff",
+              "lo": "E2",
+              "hi": "A4",
+              "accidentals": true
+            },
+            {
+              "type": "playStaff",
+              "lo": "E2",
+              "hi": "A4",
+              "accidentals": false
+            },
+            {
+              "type": "findFret",
+              "strings": [
+                4,
+                3,
+                2
+              ],
+              "maxFret": 12,
+              "accidentals": true
+            }
+          ]
+        },
+        {
+          "type": "mixed",
+          "title": "Readiness: intervals and ears",
+          "from": [
+            {
+              "type": "intervalShape",
+              "set": [
+                "m2",
+                "M2",
+                "m3",
+                "M3",
+                "P4",
+                "A4",
+                "P5",
+                "m6",
+                "M6",
+                "m7",
+                "M7",
+                "P8"
+              ]
+            },
+            {
+              "type": "earInterval",
+              "set": [
+                "m2",
+                "M2",
+                "m3",
+                "M3",
+                "P4",
+                "A4",
+                "P5",
+                "m6",
+                "M6",
+                "m7",
+                "M7",
+                "P8"
+              ]
+            },
+            {
+              "type": "earTriad",
+              "set": [
+                "major7",
+                "dominant7",
+                "minor7",
+                "halfDiminished"
+              ]
+            },
+            {
+              "type": "earProgression",
+              "sevenths": false
+            }
+          ]
+        },
+        {
+          "type": "mixed",
+          "title": "Readiness: harmony",
+          "from": [
+            {
+              "type": "spellTriad",
+              "set": [
+                "major7",
+                "dominant7",
+                "minor7",
+                "halfDiminished"
+              ]
+            },
+            {
+              "type": "diatonicChord",
+              "sevenths": true,
+              "roots": [
+                "C",
+                "G",
+                "D",
+                "A",
+                "F",
+                "Bb",
+                "Eb"
+              ]
+            },
+            {
+              "type": "twoFiveOne"
+            },
+            {
+              "type": "secondaryDominant",
+              "roots": [
+                "C",
+                "G",
+                "F"
+              ]
+            }
+          ]
+        },
+        {
+          "type": "mixed",
+          "title": "Readiness: blues and rhythm",
+          "from": [
+            {
+              "type": "bluesNumbers",
+              "forms": [
+                "standard",
+                "jazz"
+              ],
+              "roots": [
+                "A",
+                "E",
+                "G",
+                "C",
+                "F",
+                "Bb"
+              ]
+            },
+            {
+              "type": "boxDegree",
+              "scale": "minorPentatonic",
+              "roots": [
+                "A",
+                "E",
+                "G",
+                "C",
+                "D"
+              ]
+            },
+            {
+              "type": "earCell",
+              "pulses": 3
+            },
+            {
+              "type": "rhythmValue"
+            }
+          ]
+        }
+      ]
+    },
+    {
       "id": "B1-form",
       "track": "blues",
       "level": 1,

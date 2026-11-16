@@ -75,7 +75,7 @@ void HomePage::paint (juce::Graphics& g)
     drawHeading (g, "Your progress", inner.removeFromTop (34), 21.0f);
     static const char* levelNames[] = { "", "Level 1: Foundations", "Level 2: Position player", "Level 3: Harmony", "Level 4: Pre-Gleason" };
     int lastLevel = -1;
-    const int rowH = juce::jlimit (22, 32, (inner.getHeight() - 110) / juce::jmax (1, (int) lessons.size() + 6));
+    const int rowH = juce::jlimit (24, 38, (inner.getHeight() - 110) / 12);
     auto barRow = [&] (const juce::String& title, int done, int total)
     {
         auto row = inner.removeFromTop (rowH);
@@ -105,14 +105,19 @@ void HomePage::paint (juce::Graphics& g)
             passed += progress.passed (l.exerciseKey (x)) ? 1 : 0;
         return passed;
     };
-    for (auto& l : lessons)
+    heading ("Music Theory: lessons finished");
+    for (int level = 1; level <= 4; ++level)
     {
-        if (l.level != lastLevel)
-        {
-            lastLevel = l.level;
-            heading (levelNames[juce::jlimit (0, 4, l.level)]);
-        }
-        barRow (l.title, passedIn (l), (int) l.exercises.size());
+        int total = 0, finished = 0;
+        for (auto& l : lessons)
+            if (l.level == level)
+            {
+                ++total;
+                finished += passedIn (l) == (int) l.exercises.size() ? 1 : 0;
+            }
+        if (total > 0)
+            barRow (levelNames[level], finished, total);
+        lastLevel = level;
     }
     heading ("Blues track");
     int lessonsDone = 0;
@@ -123,11 +128,17 @@ void HomePage::paint (juce::Graphics& g)
     for (auto& lk : licks)
         learned += progress.bestScore ("lick/" + lk.id) >= Progress::passMark ? 1 : 0;
     barRow ("Licks learned", learned, (int) licks.size());
+    for (auto& l : lessons)
+        if (l.id == "L24-readiness")
+        {
+            heading ("Ready for Gleason's book?");
+            barRow ("Readiness quizzes passed", passedIn (l), (int) l.exercises.size());
+        }
     inner.removeFromTop (10);
     drawHeading (g, "Coming next", inner.removeFromTop (28), 18.0f);
     g.setColour (Palette::dim);
     g.setFont (Fonts::ui (15.0f));
-    g.drawFittedText ("Milestone 5, pre-Gleason: modes, arpeggios across the neck, II-V-I in every key, secondary dominants, octave shapes, cells, and a readiness quiz for the book.",
+    g.drawFittedText ("Milestone 6: a daily session planner that picks today's exercises, spaced repetition of what you passed, and practice statistics.",
                       inner.removeFromTop (60), juce::Justification::topLeft, 3);
 }
 

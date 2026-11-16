@@ -59,13 +59,13 @@ static void testTheory()
 static void testLessons()
 {
     const auto lessons = loadLessons();
-    CHECK (lessons.size() == 25, "25 lessons, got %d", (int) lessons.size());
+    CHECK (lessons.size() == 33, "33 lessons, got %d", (int) lessons.size());
     int blues = 0;
     for (auto& l : lessons) blues += l.track == "blues" ? 1 : 0;
     CHECK (blues == 9, "9 blues lessons (%d)", blues);
     std::set<juce::String> ids;
     for (auto& l : lessons)
-        CHECK (ids.insert (l.id).second && l.level >= 1 && l.level <= 3 && (l.track == "theory" || l.track == "blues") && ! l.exercises.empty(), "%s: unique id, level, exercises", l.id.toRawUTF8());
+        CHECK (ids.insert (l.id).second && l.level >= 1 && l.level <= 4 && (l.track == "theory" || l.track == "blues") && ! l.exercises.empty(), "%s: unique id, level, exercises", l.id.toRawUTF8());
     juce::Random rng (42);
     int questions = 0;
     for (auto& l : lessons)
@@ -102,8 +102,12 @@ static void testLessons()
                                && q.sequence.front().pc() == q.sequence.back().pc(), "%s: root to root", what);
                     if (ex.type == "spellTriad" || ex.type == "playTriad")
                         CHECK (q.sequence.size() == 3 || q.sequence.size() == 4, "%s: chord tones", what);
+                    if (ex.type.startsWith ("spell") || ex.type.startsWith ("play") || ex.type == "writeScale")
+                        for (size_t k = 1; k < q.sequence.size(); ++k)
+                            CHECK (q.sequence[k].midi() > q.sequence[k - 1].midi() || (ex.type == "playCell" && q.sequence[k].midi() != q.sequence[k - 1].midi()),
+                                   "%s: in order", what);
                     for (size_t k = 1; k < q.sequence.size(); ++k)
-                        CHECK (q.sequence[k].midi() > q.sequence[k - 1].midi(), "%s: ascending", what);
+                        CHECK (q.sequence[k].midi() != q.sequence[k - 1].midi(), "%s: no repeated note (the detector needs a change)", what);
                 }
                 if (q.tapRhythm)
                     CHECK (q.rhythm.size() >= 3 && q.rhythmBeats > 0 && q.listenTimes.size() == q.listenMidi.size() && q.tapBpm > 30, "%s: tap question", what);
@@ -363,7 +367,13 @@ static void testFingerings()
             auto inScale = [&] (int midi) { return std::find (pcs.begin(), pcs.end(), mod12 (midi)) != pcs.end(); };
 
             const auto pos = positionFingerings (pc, st);
-            CHECK (pos.size() == 5, "%s on %d: 5 positions (%d)", st.id.toRawUTF8(), pc, (int) pos.size());
+            int expected = 5;
+            if (st.size() < 7)
+            {
+                expected = 0;
+                for (auto& iv : st.intervals) expected += (iv.quality == "d" || iv.quality == "A") ? 0 : 1;
+            }
+            CHECK ((int) pos.size() == expected, "%s on %d: %d positions (%d)", st.id.toRawUTF8(), pc, expected, (int) pos.size());
             for (auto& fg : pos)
             {
                 ++fingerings;
@@ -378,7 +388,7 @@ static void testFingerings()
                 }
                 CHECK (fg.highFret - fg.lowFret <= 4, "%s %s %d: span %d", st.id.toRawUTF8(), fg.name.toRawUTF8(), pc, fg.highFret - fg.lowFret);
                 CHECK ((int) degrees.size() == st.size(), "%s %s: every degree", st.id.toRawUTF8(), fg.name.toRawUTF8());
-                CHECK (fg.notes.size() >= 10, "%s: covers two octaves (%d notes)", fg.name.toRawUTF8(), (int) fg.notes.size());
+                CHECK ((int) fg.notes.size() >= 2 * st.size(), "%s %s: covers two octaves (%d notes)", st.id.toRawUTF8(), fg.name.toRawUTF8(), (int) fg.notes.size());
             }
 
             const auto nps = threeNpsFingerings (pc, st);
@@ -717,6 +727,43 @@ static void testRhythm()
     }
 }
 
+
+static void testLevel4()
+{
+    const auto n = [] (const char* s) { return *parseNote (s); };
+    CHECK (names (scaleNotes (n ("D3"), scaleType ("dorian"), false)) == "D E F G A B C", "D Dorian");
+    CHECK (names (scaleNotes (n ("E3"), scaleType ("phrygian"), false)) == "E F G A B C D", "E Phrygian");
+    CHECK (names (scaleNotes (n ("F3"), scaleType ("lydian"), false)) == "F G A B C D E", "F Lydian");
+    CHECK (names (scaleNotes (n ("B3"), scaleType ("locrian"), false)) == "B C D E F G A", "B Locrian");
+    // each mode has the notes of its parent major scale
+    for (auto& m : majorModes())
+        for (auto* key : { "C", "G", "F", "Bb", "D" })
+        {
+            auto tonic = n (key);
+            tonic.octave = 3;
+            auto root = scaleNotes (tonic, scaleType ("major"), false)[(size_t) m.degree];
+            std::set<int> a, b;
+            for (auto& x : scaleNotes (tonic, scaleType ("major"), false)) a.insert (x.pc());
+            for (auto& x : scaleNotes (root, scaleType (m.scaleId), false)) b.insert (x.pc());
+            CHECK (a == b && mod12 (root.pc() + scaleType (m.scaleId).parent) == tonic.pc(), "%s from %s", m.name.toRawUTF8(), key);
+        }
+    const auto c = n ("C3");
+    juce::StringArray sec;
+    for (int d = 1; d <= 5; ++d) { const auto x = secondaryDominant (c, d); sec.add (chordSymbol (x.root, *x.type)); }
+    CHECK (sec.joinIntoString (" ") == "A7 B7 C7 D7 E7", "secondary dominants in C: %s", sec.joinIntoString (" ").toRawUTF8());
+    juce::StringArray bor;
+    for (auto& b : borrowedChords (c)) bor.add (chordSymbol (b.root, *b.type));
+    const auto flat = juce::String (juce::CharPointer_UTF8 ("\xe2\x99\xad"));
+    CHECK (bor.joinIntoString (" ") == "E" + flat + " Fm A" + flat + " B" + flat, "borrowed chords in C: %s", bor.joinIntoString (" ").toRawUTF8());
+    CHECK (tritoneSubstitute (n ("G3")).name (false, false) == "Db" && tritoneSubstitute (n ("E3")).name (false, false) == "Bb"
+           && tritoneSubstitute (n ("F3")).name (false, false) == "B", "tritone substitutes");
+    for (auto& sh : octaveShapes())
+        for (int f = 3; f <= 9; ++f)
+            CHECK (fretMidi (sh.highString, f + sh.frets) == fretMidi (sh.lowString, f) + 12, "%s shape octave", sh.name.toRawUTF8());
+    for (auto& tn : dominantTensions())
+        CHECK (intervalFromShort (tn.interval).semitones > 12, "%s is above the octave", tn.label.toRawUTF8());
+}
+
 static void testProgress()
 {
     auto file = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("guitarcoach-test-progress.json");
@@ -752,6 +799,7 @@ int main()
     std::printf ("licks\n");     testLicks();
     std::printf ("harmony\n");   testHarmony();
     std::printf ("rhythm\n");    testRhythm();
+    std::printf ("level 4\n");   testLevel4();
     std::printf ("lessons\n");   testLessons();
     std::printf ("pitch\n");     testPitch();
     std::printf ("progress\n");  testProgress();

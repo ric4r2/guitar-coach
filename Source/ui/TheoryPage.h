@@ -28,13 +28,21 @@ private:
     const std::vector<Lesson>& lessons;
     int current = 0;
 
+    // the lesson list scrolls: level headings and one button per lesson
+    struct ListContent : juce::Component
+    {
+        std::vector<std::pair<juce::Rectangle<int>, juce::String>> heads;
+        void paint (juce::Graphics& g) override { for (auto& [area, title] : heads) drawHeading (g, title, area, 18.0f); }
+    };
+    ListContent listContent;
+    juce::Viewport listViewport;
     juce::OwnedArray<juce::TextButton> lessonButtons;
+    void scrollToCurrent();
     juce::OwnedArray<juce::TextButton> exerciseButtons;
     StaffView diagramStaff;
     FretboardView diagramFret;
     CircleView circle;
     BluesChartView chartDiagram;
-    std::vector<std::pair<juce::Rectangle<int>, juce::String>> levelHeads;
     int exerciseRowHeight = 50;
     RichText text;
     juce::Viewport textViewport;

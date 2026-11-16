@@ -30,7 +30,7 @@ int main (int argc, char** argv)
     main.showPage (MainComponent::home);      save (main, folder, "01-home");
     main.showPage (MainComponent::theory);
     auto& theory = main.getTheoryPage();
-    for (int l = 0; l < 16; ++l)
+    for (int l = 0; l < 24; ++l)
     {
         theory.openLesson (l);
         save (main, folder, "02-lesson" + juce::String (l + 1));
@@ -47,7 +47,10 @@ int main (int argc, char** argv)
                            { 7, 0, "spellTriad" }, { 7, 1, "triadQuality" }, { 7, 4, "earTriad" }, { 7, 5, "playTriad" },
                            { 8, 0, "inversionName" }, { 8, 1, "triadShape" }, { 9, 0, "intervalShape" },
                            { 10, 1, "seventhQuality" }, { 11, 1, "diatonicChord" }, { 12, 1, "chordFunction" }, { 13, 1, "progressionName" },
-                           { 13, 2, "earProgression" }, { 14, 0, "rhythmValue" }, { 14, 2, "tapRhythm" }, { 15, 0, "earCell" }, { 15, 2, "tapRhythm16" } };
+                           { 13, 2, "earProgression" }, { 14, 0, "rhythmValue" }, { 14, 2, "tapRhythm" }, { 15, 0, "earCell" }, { 15, 2, "tapRhythm16" },
+                           { 16, 0, "modeName" }, { 17, 0, "arpDegree" }, { 18, 1, "guideTone" }, { 19, 0, "secondaryDominant" }, { 19, 2, "borrowedChord" },
+                           { 20, 0, "tensionNote" }, { 20, 1, "tritoneSub" }, { 21, 0, "octaveShape" }, { 21, 1, "findOctave" }, { 22, 0, "playCell" },
+                           { 22, 1, "earMelody" }, { 23, 2, "readinessHarmony" } };
     for (auto& s : shots)
     {
         theory.openExercise (s.lesson, s.exercise, 7);
@@ -61,10 +64,21 @@ int main (int argc, char** argv)
             theory.getExerciseView().simulateSequence (10);
             save (main, folder, "03-ex-" + name + "-answered");
         }
+        else if (name == "earMelody" || name == "playCell")
+        {
+            theory.getExerciseView().simulateSequence (2);
+            save (main, folder, "03-ex-" + name + "-partway");
+        }
         else if (name.startsWith ("tapRhythm"))
         {
             theory.getExerciseView().simulateTaps (name == "tapRhythm" ? 0.04 : 0.3);
             save (main, folder, "03-ex-" + name + "-tapped");
+        }
+        else if (name == "modeName" || name == "arpDegree" || name == "guideTone" || name == "secondaryDominant" || name == "borrowedChord" || name == "tensionNote"
+                 || name == "tritoneSub" || name == "octaveShape" || name == "readinessHarmony")
+        {
+            theory.getExerciseView().simulateChoice (true);
+            save (main, folder, "03-ex-" + name + "-answered");
         }
         else if ((s.exercise == 0 && s.lesson < 4) || name == "seventhQuality" || name == "diatonicChord" || name == "chordFunction" || name == "progressionName"
                  || name == "earProgression" || name == "rhythmValue" || name == "earCell" || name == "intervalName" || name == "earInterval" || name == "nameKeySig" || name == "circle"

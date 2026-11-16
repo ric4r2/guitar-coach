@@ -237,7 +237,15 @@ namespace theory
             { "majorPentatonic", "Major pentatonic",  ivs ({ "P1", "M2", "M3", "P5", "M6" }), 0 },
             { "minorPentatonic", "Minor pentatonic",  ivs ({ "P1", "m3", "P4", "P5", "m7" }), 3 },
             { "blues",           "Blues",             ivs ({ "P1", "m3", "P4", "d5", "P5", "m7" }), 3 },
-            { "mixolydian",      "Mixolydian",        ivs ({ "P1", "M2", "M3", "P4", "P5", "M6", "m7" }), 5 } };
+            { "mixolydian",      "Mixolydian",        ivs ({ "P1", "M2", "M3", "P4", "P5", "M6", "m7" }), 5 },
+            { "dorian",          "Dorian",            ivs ({ "P1", "M2", "m3", "P4", "P5", "M6", "m7" }), 10 },
+            { "phrygian",        "Phrygian",          ivs ({ "P1", "m2", "m3", "P4", "P5", "m6", "m7" }), 8 },
+            { "lydian",          "Lydian",            ivs ({ "P1", "M2", "M3", "A4", "P5", "M6", "M7" }), 7 },
+            { "locrian",         "Locrian",           ivs ({ "P1", "m2", "m3", "P4", "d5", "m6", "m7" }), 1 },
+            { "arpMaj7",         "Maj7 arpeggio",     ivs ({ "P1", "M3", "P5", "M7" }), 0 },
+            { "arpDom7",         "Dominant 7 arpeggio", ivs ({ "P1", "M3", "P5", "m7" }), 0 },
+            { "arpMin7",         "Minor 7 arpeggio",  ivs ({ "P1", "m3", "P5", "m7" }), 0 },
+            { "arpHalfDim",      "m7b5 arpeggio",     ivs ({ "P1", "m3", "d5", "m7" }), 0 } };
         return list;
     }
 
@@ -484,6 +492,70 @@ namespace theory
             { "IIm7 - V7 - Imaj7",   { 1, 4, 0 },    true },
             { "Imaj7 - VIm7 - IIm7 - V7", { 0, 5, 1, 4 }, true },
             { "IIIm7 - VIm7 - IIm7 - V7", { 2, 5, 1, 4 }, true } };
+        return list;
+    }
+}
+
+namespace theory
+{
+    // ---------------------------------------------------------------- modes, borrowed chords, tensions
+
+    const std::vector<Mode>& majorModes()
+    {
+        static const std::vector<Mode> list {
+            { 0, "Ionian", "major" }, { 1, "Dorian", "dorian" }, { 2, "Phrygian", "phrygian" }, { 3, "Lydian", "lydian" },
+            { 4, "Mixolydian", "mixolydian" }, { 5, "Aeolian", "naturalMinor" }, { 6, "Locrian", "locrian" } };
+        return list;
+    }
+
+    DiatonicChord secondaryDominant (const Note& tonic, int targetDegree)
+    {
+        const auto target = diatonicChord (tonic, targetDegree, false);
+        DiatonicChord c;
+        c.degree = targetDegree;
+        c.root = transposeUp (target.root, intervalFromShort ("P5"));
+        c.root.octave = 3;
+        c.type = &chordType ("dominant7");
+        c.notes = chordNotes (c.root, *c.type);
+        return c;
+    }
+
+    std::vector<BorrowedChord> borrowedChords (const Note& tonic)
+    {
+        // from the parallel minor (same root, natural minor): bIII, iv, bVI, bVII
+        const auto minor = scaleNotes (tonic, scaleType ("naturalMinor"), false);
+        auto build = [&] (int degree, const char* type, const char* numeral)
+        {
+            BorrowedChord b;
+            b.numeral = numeral;
+            b.root = minor[(size_t) degree];
+            b.type = &chordType (type);
+            return b;
+        };
+        return { build (2, "major", "bIII"), build (3, "minor", "iv"), build (5, "major", "bVI"), build (6, "major", "bVII") };
+    }
+
+    Note tritoneSubstitute (const Note& dominantRoot)
+    {
+        // a diminished 5th up gives the usual flat spelling (G -> Db)
+        auto n = transposeUp (dominantRoot, intervalFromShort ("d5"));
+        if (std::abs (n.acc) > 1 || (n.acc == -1 && (n.letter == 3 || n.letter == 0)))
+            n = noteFromMidi (n.midi(), false);
+        return n;
+    }
+
+    const std::vector<Tension>& dominantTensions()
+    {
+        static const std::vector<Tension> list {
+            { "9", "M9" }, { "b9", "m9" }, { "#9", "A9" }, { "#11", "A11" }, { "13", "M13" }, { "b13", "m13" } };
+        return list;
+    }
+
+    const std::vector<OctaveShape>& octaveShapes()
+    {
+        // the root on the lower string, the octave on the higher one, `frets` further up the neck (negative = down)
+        static const std::vector<OctaveShape> list {
+            { "E", 6, 4, 2 }, { "D", 4, 2, 3 }, { "C", 5, 2, -2 }, { "A", 5, 3, 2 }, { "G", 6, 3, -3 } };
         return list;
     }
 }

@@ -125,6 +125,23 @@ namespace theory
     struct Progression { juce::String name; std::vector<int> degrees; bool sevenths = false; };
     const std::vector<Progression>& commonProgressions();      // I-IV-V-I, I-vi-IV-V, I-V-vi-IV, II-V-I, I-vi-ii-V ...
 
+    // ---------------------------------------------------------------- Level 4
+    struct Mode { int degree; juce::String name, scaleId; };       // a mode = the major scale started on one of its degrees
+    const std::vector<Mode>& majorModes();                          // Ionian ... Locrian
+
+    DiatonicChord secondaryDominant (const Note& tonic, int targetDegree);   // V7 of that degree, e.g. V7/ii in C = A7
+
+    struct BorrowedChord { juce::String numeral; Note root; const ChordType* type = nullptr; };
+    std::vector<BorrowedChord> borrowedChords (const Note& tonic);  // bIII, iv, bVI, bVII from the parallel minor
+
+    Note tritoneSubstitute (const Note& dominantRoot);              // G -> Db
+
+    struct Tension { juce::String label, interval; };               // "b9", "m9"
+    const std::vector<Tension>& dominantTensions();                 // 9 b9 #9 #11 13 b13
+
+    struct OctaveShape { juce::String name; int lowString, highString, frets; };
+    const std::vector<OctaveShape>& octaveShapes();                 // the five octave shapes, named after the open chords
+
     // a note an octave higher or lower
     inline Note octaveShift (Note n, int octaves) { n.octave += octaves; return n; }
 }

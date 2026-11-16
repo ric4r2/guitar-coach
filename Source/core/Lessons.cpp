@@ -550,11 +550,17 @@ Question makeQuestion (const ExerciseSpec& spec, juce::Random& rng)
             q.judgePlayed = [pc = root.pc()] (int m) { return mod12 (m) == pc; };
             q.judgeFret = [pc = root.pc()] (int s, int f) { return mod12 (fretMidi (s, f)) == pc; };
             // show the shape with the root on the 6th string
+            // show the position with the root lowest on the 6th string
             const auto names = scaleSpelling (root, st);
-            for (auto& fg : positionFingerings (root.pc(), st))
-                if (fg.name.startsWith (st.size() < 7 ? "Box 1" : st.parent == 3 ? "G shape" : st.parent == 5 ? "A shape" : "E shape"))
-                    for (auto& n : fg.notes)
-                        q.revealMarks.push_back ({ n.string, n.fret, names[(size_t) mod12 (n.midi)], n.degree == 0 ? 1 : 0 });
+            const auto positions = positionFingerings (root.pc(), st);
+            size_t best = 0;
+            int bestFret = 99;
+            for (size_t k = 0; k < positions.size(); ++k)
+                for (auto& n : positions[k].notes)
+                    if (n.string == 6 && n.degree == 0 && n.fret < bestFret) { bestFret = n.fret; best = k; }
+            if (! positions.empty())
+                for (auto& n : positions[best].notes)
+                    q.revealMarks.push_back ({ n.string, n.fret, names[(size_t) mod12 (n.midi)], n.degree == 0 ? 1 : 0 });
         }
         return q;
     }
@@ -1270,6 +1276,342 @@ Question makeQuestion (const ExerciseSpec& spec, juce::Random& rng)
         return q;
     }
 
+    if (t == "mixed")
+    {
+        // a quiz drawing each question from a list of exercise kinds
+        if (auto* from = spec.params["from"].getArray(); from != nullptr && ! from->isEmpty())
+        {
+            const auto& pick = from->getReference (rng.nextInt (from->size()));
+            return makeQuestion ({ pick["type"].toString(), spec.title, pick }, rng);
+        }
+    }
+
+    if (t == "modeName" || t == "modeParent")
+    {
+        const auto parent = pickRoot (spec, rng, { "C", "G", "D", "F", "Bb", "A", "Eb" }, 3);
+        const auto& modes = majorModes();
+        const auto& m = modes[(size_t) rng.nextInt ((int) modes.size())];
+        const auto scale = scaleNotes (parent, scaleType ("major"), false);
+        auto modeRoot = scale[(size_t) m.degree];
+        modeRoot.octave = 3;
+        const auto modeNotes = scaleNotes (modeRoot, scaleType (m.scaleId));
+        juce::StringArray formula;
+        for (auto& iv : scaleType (m.scaleId).intervals)
+            formula.add (degreeLabel (iv));
+        q.explanation = modeRoot.name() + " " + m.name + " = the notes of " + parent.name() + " major from " + modeRoot.name() + ": " + noteList (modeNotes)
+                      + ". Formula: " + formula.joinIntoString (" ") + ".";
+        q.listenMidi = midis (modeNotes);
+        q.listenGap = 0.42;
+        q.revealStaff = modeNotes;
+        if (t == "modeName")
+        {
+            q.prompt = "Play the notes of " + parent.name() + " major from " + modeRoot.name() + " up to " + modeRoot.name() + ". Which mode is that?";
+            for (auto& x : modes) q.choices.add (x.name);
+            q.correctChoice = m.degree;
+            q.choiceColumns = 7;
+        }
+        else
+        {
+            q.prompt = modeRoot.name() + " " + m.name + " has the same notes as which major scale?";
+            // six keys around the right one on the circle of fifths
+            const int f = keyFifths (parent, false);
+            std::vector<int> opts { f };
+            while (opts.size() < 6)
+            {
+                const int o = juce::jlimit (-6, 6, f - 3 + rng.nextInt (7));
+                if (std::find (opts.begin(), opts.end(), o) == opts.end()) opts.push_back (o);
+            }
+            std::sort (opts.begin(), opts.end());
+            for (int o : opts) q.choices.add (keyName (o, false));
+            q.correctChoice = q.choices.indexOf (keyName (f, false));
+            q.choiceColumns = 6;
+        }
+        return q;
+    }
+
+    if (t == "twoFiveOne" || t == "guideTone")
+    {
+        const auto key = pickRoot (spec, rng, { "C", "F", "Bb", "Eb", "G", "D", "Ab", "A" }, 3);
+        auto chordsIn = [] (const Note& k)
+        {
+            return std::vector<DiatonicChord> { diatonicChord (k, 1, true), diatonicChord (k, 4, true), diatonicChord (k, 0, true) };
+        };
+        auto symbols = [] (const std::vector<DiatonicChord>& cs)
+        {
+            juce::StringArray s;
+            for (auto& c : cs) s.add (chordSymbol (c.root, *c.type));
+            return s.joinIntoString ("  ");
+        };
+        const auto cs = chordsIn (key);
+        if (t == "twoFiveOne")
+        {
+            const juce::StringArray keys { "C", "F", "Bb", "Eb", "Ab", "Db", "G", "D", "A", "E" };
+            juce::StringArray opts { key.name() };
+            while (opts.size() < 4)
+                opts.addIfNotAlreadyThere (parseNote (keys[rng.nextInt (keys.size())])->name());
+            opts.sort (true);
+            if (rng.nextBool())
+            {
+                q.prompt = "What is the II-V-I in " + key.name() + " major?";
+                for (auto& o : opts) { auto k = *parseNote (o); k.octave = 3; q.choices.add (symbols (chordsIn (k))); }
+                q.choiceColumns = 2;
+            }
+            else
+            {
+                q.prompt = symbols (cs).replace ("  ", "  -  ") + " is the II-V-I of which key?";
+                for (auto& o : opts) q.choices.add (*parseNote (o) == key ? key.name() + " major" : parseNote (o)->name() + " major");
+                q.choiceColumns = 4;
+            }
+            q.correctChoice = opts.indexOf (key.name());
+            q.explanation = "II-V-I in " + key.name() + ": " + symbols (cs) + ". The roots go up a 4th each time: " + cs[0].root.name() + ", " + cs[1].root.name() + ", " + cs[2].root.name() + ".";
+        }
+        else
+        {
+            const bool first = rng.nextBool();   // II to V, or V to I
+            const auto& from = cs[first ? 0 : 1];
+            const auto& to = cs[first ? 1 : 2];
+            const auto seventh = from.notes[3], target = to.notes[1];
+            q.prompt = "II-V-I in " + key.name() + ": the 7th of " + chordSymbol (from.root, *from.type) + " is " + seventh.name() + ". Which note of "
+                     + chordSymbol (to.root, *to.type) + " does it lead to?";
+            q.choices = accidentalChoices();
+            q.choices.addIfNotAlreadyThere (target.name());
+            q.correctChoice = q.choices.indexOf (target.name());
+            q.choiceColumns = 9;
+            q.listenMidi = { seventh.midi() + 12, target.midi() + 12 - (target.midi() > seventh.midi() ? 12 : 0) };
+            q.explanation = seventh.name() + " moves down a half step to " + target.name() + ", the 3rd of " + chordSymbol (to.root, *to.type)
+                          + ". Sevenths fall to thirds: that is the guide-tone line.";
+        }
+        return q;
+    }
+
+    if (t == "secondaryDominant")
+    {
+        const auto key = pickRoot (spec, rng, { "C", "G", "F", "D", "Bb" }, 3);
+        const int targets[5] = { 1, 2, 3, 4, 5 };
+        const int d = targets[rng.nextInt (5)];
+        const auto sd = secondaryDominant (key, d);
+        const auto target = diatonicChord (key, d, false);
+        const auto targetNumeral = romanNumeral (d, *target.type);
+        q.explanation = chordSymbol (sd.root, *sd.type) + " is V7/" + targetNumeral + ": the dominant 7th a 5th above " + chordSymbol (target.root, *target.type)
+                      + ", so it pulls to it. Its 3rd (" + sd.notes[1].name() + ") is not in " + key.name() + " major: that is the colour of a secondary dominant.";
+        if (rng.nextBool())
+        {
+            q.prompt = "In " + key.name() + " major, which chord is V7/" + targetNumeral + "?";
+            for (int x : targets)
+            {
+                const auto o = secondaryDominant (key, x);
+                q.choices.add (chordSymbol (o.root, *o.type));
+            }
+            q.correctChoice = d - 1;
+        }
+        else
+        {
+            q.prompt = "In " + key.name() + " major, " + chordSymbol (sd.root, *sd.type) + " is the V7 of which chord?";
+            for (int x : targets)
+            {
+                const auto o = diatonicChord (key, x, false);
+                q.choices.add (romanNumeral (x, *o.type) + " (" + chordSymbol (o.root, *o.type) + ")");
+            }
+            q.correctChoice = d - 1;
+        }
+        q.choiceColumns = 5;
+        q.listenChords = { midis (sd.notes), midis (target.notes) };
+        q.listenGap = 1.1;
+        return q;
+    }
+
+    if (t == "borrowedChord")
+    {
+        const auto key = pickRoot (spec, rng, { "C", "G", "D", "F", "A" }, 3);
+        const auto borrowed = borrowedChords (key);
+        const int b = rng.nextInt ((int) borrowed.size());
+        const auto& bc = borrowed[(size_t) b];
+        q.explanation = chordSymbol (bc.root, *bc.type) + " is " + bc.numeral + ", borrowed from " + key.name() + " minor. Borrowed chords darken a major key: "
+                      + "the iv and the bVII are everywhere in rock, the bVI in ballads and film music.";
+        if (rng.nextBool())
+        {
+            q.prompt = "In " + key.name() + " major, which chord is borrowed from " + key.name() + " minor?";
+            // the borrowed chord and three chords of the major key
+            std::vector<int> degrees { 1, 2, 3, 4, 5 };
+            juce::StringArray c;
+            c.add (chordSymbol (bc.root, *bc.type));
+            while (c.size() < 4)
+            {
+                const auto o = diatonicChord (key, degrees[(size_t) rng.nextInt (5)], false);
+                c.addIfNotAlreadyThere (chordSymbol (o.root, *o.type));
+            }
+            c.sort (true);
+            q.choices = c;
+            q.correctChoice = c.indexOf (chordSymbol (bc.root, *bc.type));
+            q.choiceColumns = 4;
+        }
+        else
+        {
+            q.prompt = "In " + key.name() + " major, " + chordSymbol (bc.root, *bc.type) + " is borrowed from the parallel minor. Which numeral is it?";
+            for (auto& x : borrowed) q.choices.add (x.numeral);
+            q.correctChoice = b;
+            q.choiceColumns = 4;
+        }
+        return q;
+    }
+
+    if (t == "tensionNote")
+    {
+        for (;;)
+        {
+            const auto root = pickRoot (spec, rng, { "C", "F", "G", "D", "A", "Bb", "E", "Eb" }, 3);
+            const auto& tens = dominantTensions()[(size_t) rng.nextInt ((int) dominantTensions().size())];
+            const auto note = transposeUp (root, intervalFromShort (tens.interval));
+            if (! plainSpelling (note))
+                continue;
+            q.prompt = "Over " + root.name() + "7, which note is the " + tens.label + "?";
+            q.choices = accidentalChoices();
+            q.choices.addIfNotAlreadyThere (note.name());
+            q.correctChoice = q.choices.indexOf (note.name());
+            q.choiceColumns = 9;
+            const auto chord = chordNotes (root, chordType ("dominant7"));
+            q.listenMidi = midis (chord);
+            q.listenMidi.push_back (note.midi());
+            q.listenAsChord = true;
+            q.listenGap = 0.35;
+            q.explanation = "The " + tens.label + " of " + root.name() + "7 is " + note.name() + " (" + intervalFromShort (tens.interval).longName()
+                          + " above the root). Tensions are the notes above the 7th: 9, 11 and 13, raised or lowered on dominant chords.";
+            return q;
+        }
+    }
+
+    if (t == "tritoneSub")
+    {
+        const auto root = pickRoot (spec, rng, { "G", "C", "D", "A", "E", "F", "Bb" }, 3);
+        const auto sub = tritoneSubstitute (root);
+        juce::StringArray c { sub.name() + "7" };
+        const juce::StringArray pool { "C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B" };
+        while (c.size() < 5)
+            c.addIfNotAlreadyThere (parseNote (pool[rng.nextInt (pool.size())])->name() + "7");
+        c.removeString (root.name() + "7");
+        while (c.size() < 5)
+            c.addIfNotAlreadyThere (parseNote (pool[rng.nextInt (pool.size())])->name() + "7");
+        c.sort (true);
+        const auto dom = chordNotes (root, chordType ("dominant7"));
+        q.prompt = "What is the tritone substitute for " + root.name() + "7?";
+        q.choices = c;
+        q.correctChoice = c.indexOf (sub.name() + "7");
+        q.choiceColumns = 5;
+        q.explanation = sub.name() + "7 is a tritone (3 tones) away from " + root.name() + "7, and both share the same 3rd and 7th (" + dom[1].name() + " and "
+                      + dom[3].name() + ", swapped). So " + sub.name() + "7 can replace " + root.name() + "7, and the bass moves down by half steps: II, bII, I.";
+        return q;
+    }
+
+    if (t == "octaveShape" || t == "findOctave")
+    {
+        const auto& shapes = octaveShapes();
+        const int which = rng.nextInt ((int) shapes.size());
+        const auto& sh = shapes[(size_t) which];
+        const int lo = juce::jmax (1, 1 - sh.frets), hi = juce::jmin (12, 14 - sh.frets);
+        const int f = lo + rng.nextInt (hi - lo + 1);
+        const int f2 = f + sh.frets;
+        const auto rootNote = noteFromMidi (fretMidi (sh.lowString, f), rng.nextBool());
+        q.showFretboard = true;
+        q.maxFret = 15;
+        q.revealMarks = { { sh.lowString, f, rootNote.name(), 1 }, { sh.highString, f2, rootNote.name(), 2 } };
+        const juce::String where = sh.frets > 0 ? juce::String (sh.frets) + (sh.frets == 1 ? " fret higher" : " frets higher") : juce::String (-sh.frets) + " frets lower";
+        q.explanation = sh.name + " shape: root on the " + stringName (sh.lowString) + ", octave on the " + stringName (sh.highString) + ", " + where
+                      + ". It is the octave inside the open " + sh.name + " chord.";
+        q.listenMidi = { fretMidi (sh.lowString, f), fretMidi (sh.highString, f2) };
+        if (t == "octaveShape")
+        {
+            q.prompt = "Which octave shape is this?";
+            q.fretMarks = { { sh.lowString, f, "R", 1 }, { sh.highString, f2, "R", 4 } };
+            for (auto& x : shapes) q.choices.add (x.name + " shape");
+            q.correctChoice = which;
+            q.choiceColumns = 5;
+        }
+        else
+        {
+            q.prompt = "Find the octave of this " + rootNote.name() + " with the " + sh.name + " shape, on the " + stringName (sh.highString) + ". Click it or play it.";
+            q.fretMarks = { { sh.lowString, f, rootNote.name(), 1 } };
+            q.fretClick = true;
+            q.acceptsPlaying = true;
+            const int target = fretMidi (sh.lowString, f) + 12;
+            const int hs = sh.highString;
+            q.expectedMidi = target;
+            q.judgeFret = [hs, target] (int s, int fr) { return s == hs && fretMidi (s, fr) == target; };
+            q.judgePlayed = [target] (int m) { return m == target; };
+        }
+        return q;
+    }
+
+    if (t == "playCell")
+    {
+        const auto cells = stringList (spec.params["cells"], { "1 2 3 5", "5 6 1 2", "3 5 6 1", "1 3 5 6", "6 5 3 1" });
+        const auto cell = cells[rng.nextInt (cells.size())];
+        const auto key = pickRoot (spec, rng, { "C", "G", "D", "A", "E", "F", "Bb" }, 3);
+        const auto major = scaleNotes (key, scaleType ("major"), false);
+        std::vector<Note> notes;
+        juce::StringArray tokens = juce::StringArray::fromTokens (cell, " ", "");
+        for (auto& tok : tokens)
+        {
+            const int shift = tok.startsWith ("b") ? -1 : tok.startsWith ("#") ? 1 : 0;
+            const int deg = juce::jlimit (1, 7, tok.getTrailingIntValue());
+            auto n = major[(size_t) deg - 1];
+            n.acc += shift;
+            // each note goes up from the last, unless the cell is written going down
+            if (! notes.empty())
+            {
+                const bool down = tokens.size() > 1 && tokens[0].getTrailingIntValue() > tokens[1].getTrailingIntValue();
+                while (! down && n.midi() <= notes.back().midi()) n.octave += 1;
+                while (down && n.midi() >= notes.back().midi()) n.octave -= 1;
+                while (down && notes.back().midi() - n.midi() > 12) n.octave += 1;
+            }
+            notes.push_back (n);
+        }
+        q.prompt = "Key of " + key.name() + ": play the cell " + cell.replace (" ", "-") + " (any octave, or click the notes).";
+        q.sequence = notes;
+        q.acceptsPlaying = true;
+        q.showFretboard = true;
+        q.fretClick = true;
+        q.maxFret = 15;
+        q.expectedMidi = notes.front().midi();
+        q.judgePlayed = [pc = notes.front().pc()] (int m) { return mod12 (m) == pc; };
+        q.judgeFret = [pc = notes.front().pc()] (int s, int f) { return mod12 (fretMidi (s, f)) == pc; };
+        q.listenMidi = midis (notes);
+        q.listenGap = 0.4;
+        q.explanation = cell.replace (" ", "-") + " in " + key.name() + " is " + noteList (notes) + ". The same numbers work in every key.";
+        return q;
+    }
+
+    if (t == "earMelody")
+    {
+        const auto key = pickRoot (spec, rng, { "C", "G", "D", "F", "A" }, 3);
+        const auto scale = scaleNotes (key, scaleType ("major"), true);   // 1..8
+        const int length = (int) spec.params.getProperty ("notes", 4);
+        std::vector<Note> notes { scale[0] };
+        int idx = 0;
+        while ((int) notes.size() < length)
+        {
+            const int step = rng.nextInt (5) - 2;   // a step or a skip
+            const int next = juce::jlimit (0, 7, idx + (step == 0 ? 1 : step));
+            if (next == idx) continue;
+            idx = next;
+            notes.push_back (scale[(size_t) idx]);
+        }
+        q.prompt = "Listen to the melody in " + key.name() + " major. It starts on " + key.name() + ": name the other notes in order.";
+        q.sequence = notes;
+        q.sequenceGiven = 1;
+        q.staffNotes = { notes.front() };
+        q.autoListen = true;
+        q.listenMidi = midis (notes);
+        q.listenGap = 0.6;
+        q.revealStaff = notes;
+        sequenceChoices (q, notes);
+        juce::StringArray numbers;
+        for (auto& n : notes)
+            for (int k = 0; k < 8; ++k)
+                if (scale[(size_t) k] == n) { numbers.add (juce::String (k == 7 ? 1 : k + 1)); break; }
+        q.explanation = noteList (notes) + ": in numbers " + numbers.joinIntoString ("-") + ".";
+        return q;
+    }
+
     q.prompt = "Unknown exercise type: " + t;
     return q;
 }
@@ -1293,6 +1635,9 @@ juce::String describeExerciseInput (const ExerciseSpec& spec)
     if (t == "nameStaff") return "click or play";
     if (t == "earInterval" || t == "earScale" || t == "earTriad" || t == "earBluesChange" || t == "earFeel" || t == "earProgression" || t == "earCell") return "listen";
     if (t == "tapRhythm") return "tap or strum";
+    if (t == "playCell" || t == "findOctave") return "play or click";
+    if (t == "earMelody") return "listen";
+    if (t == "mixed") return "mixed";
     if (t == "playBend") return "play";
     if (t == "writeStaff" || t == "writeScale") return "write";
     return "click";

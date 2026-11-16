@@ -4,7 +4,8 @@ Desktop program for daily guitar practice and music theory: lessons with exercis
 writing on the staff or playing the guitar (pitch detection through the Audient iD14); scale practice in
 every position and technique drills, checked note by note with a tempo ladder; a blues track with
 backing tracks made in the app and a lick library you play along with; harmony and progressions; rhythm
-reading you tap or strum; a fretboard explorer, tuner and metronome. See [docs/PLAN.md](docs/PLAN.md) for the curriculum and milestones and
+reading you tap or strum; modes, arpeggios and a readiness quiz for Gleason's book; a fretboard explorer,
+tuner and metronome. See [docs/PLAN.md](docs/PLAN.md) for the curriculum and milestones and
 [docs/RESEARCH.md](docs/RESEARCH.md) for the research behind it.
 
 ## Build (Windows, VS2022 Build Tools)

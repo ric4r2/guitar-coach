@@ -11,8 +11,12 @@ TheoryPage::TheoryPage (AudioEngine& e, Progress& p, const std::vector<Lesson>& 
         auto* b = lessonButtons.add (new juce::TextButton());
         b->setClickingTogglesState (false);
         b->onClick = [this, i] { openLesson (i); };
-        addAndMakeVisible (b);
+        listContent.addAndMakeVisible (b);
     }
+    listViewport.setViewedComponent (&listContent, false);
+    listViewport.setScrollBarsShown (true, false);
+    listViewport.setScrollBarThickness (8);
+    addAndMakeVisible (listViewport);
     addAndMakeVisible (diagramStaff);
     addAndMakeVisible (diagramFret);
     addChildComponent (circle);
@@ -235,10 +239,22 @@ void TheoryPage::openLesson (int index)
     current = juce::jlimit (0, (int) lessons.size() - 1, index);
     exercise.setVisible (false);
     text.setLines (lessons[(size_t) current].body);
+    scrollToCurrent();
     setupDiagram();
     refreshButtons();
     resized();
     repaint();
+}
+
+void TheoryPage::scrollToCurrent()
+{
+    if (auto* b = lessonButtons[current])
+    {
+        const int top = b->getY() - 40, bottom = b->getBottom() + 10;
+        const auto view = listViewport.getViewArea();
+        if (top < view.getY()) listViewport.setViewPosition (0, juce::jmax (0, top));
+        else if (bottom > view.getBottom()) listViewport.setViewPosition (0, bottom - view.getHeight());
+    }
 }
 
 void TheoryPage::openExercise (int lessonIndex, int exerciseIndex, juce::int64 seed)
@@ -275,8 +291,6 @@ void TheoryPage::paint (juce::Graphics& g)
     auto r = getLocalBounds();
     auto left = r.removeFromLeft (330).reduced (12);
     drawPanel (g, left.toFloat());
-    for (auto& [area, title] : levelHeads)
-        drawHeading (g, title, area, 18.0f);
 
     if (exercise.isVisible())
         return;
@@ -301,25 +315,30 @@ void TheoryPage::resized()
 {
     auto r = getLocalBounds();
     auto left = r.removeFromLeft (330).reduced (12);
-    left.removeFromTop (6);
-    // a heading for each level, then its lessons
+    listViewport.setBounds (left.reduced (2, 6));
+    // a heading for each level, then its lessons; fills the panel when they fit, scrolls when they do not
     static const char* levelNames[] = { "", "Level 1 \xc2\xb7 Foundations", "Level 2 \xc2\xb7 Position player", "Level 3 \xc2\xb7 Harmony", "Level 4 \xc2\xb7 Pre-Gleason" };
     int levels = 0, lastLevel = -1;
     for (auto& l : lessons)
         if (l.level != lastLevel) { ++levels; lastLevel = l.level; }
-    const int rowH = juce::jlimit (34, 52, (left.getHeight() - levels * 36) / juce::jmax (1, (int) lessons.size()));
-    levelHeads.clear();
+    const int width = listViewport.getWidth() - 10;
+    const int rowH = juce::jlimit (38, 52, (listViewport.getHeight() - levels * 36) / juce::jmax (1, (int) lessons.size()));
+    listContent.heads.clear();
     lastLevel = -1;
+    int y = 0;
     for (int i = 0; i < lessonButtons.size(); ++i)
     {
         const int level = lessons[(size_t) i].level;
         if (level != lastLevel)
         {
-            levelHeads.push_back ({ left.removeFromTop (36).reduced (14, 0), juce::String::fromUTF8 (levelNames[juce::jlimit (0, 4, level)]) });
+            listContent.heads.push_back ({ juce::Rectangle<int> (12, y, width - 12, 36), juce::String::fromUTF8 (levelNames[juce::jlimit (0, 4, level)]) });
+            y += 36;
             lastLevel = level;
         }
-        lessonButtons[i]->setBounds (left.removeFromTop (rowH).reduced (8, 3));
+        lessonButtons[i]->setBounds (juce::Rectangle<int> (6, y, width - 6, rowH).reduced (0, 3));
+        y += rowH;
     }
+    listContent.setSize (width, y + 6);
 
     auto right = r.reduced (12);
     if (exercise.isVisible())
