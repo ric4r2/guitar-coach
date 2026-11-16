@@ -1,0 +1,30 @@
+# GuitarCoach
+
+Desktop program for daily guitar practice and music theory: lessons with exercises answered by clicking
+or by playing the guitar (pitch detection through the Audient iD14), a fretboard explorer, tuner and
+metronome. See [docs/PLAN.md](docs/PLAN.md) for the curriculum and milestones and
+[docs/RESEARCH.md](docs/RESEARCH.md) for the research behind it.
+
+## Build (Windows, VS2022 Build Tools)
+
+```
+cmake -B build -G "Visual Studio 17 2022" -A x64 -DGUITARCOACH_BUILD_TESTS=ON
+cmake --build build --config Release --target GuitarCoach GuitarCoachTests GuitarCoachSnapshot
+```
+
+- The app: `build/GuitarCoach_artefacts/Release/GuitarCoach.exe`
+- Tests: `build/GuitarCoachTests_artefacts/Release/GuitarCoachTests.exe`
+- Screens to PNG: `build/GuitarCoachSnapshot_artefacts/Release/GuitarCoachSnapshot.exe <folder>`
+
+JUCE is taken from `../GuitarDrive/build/_deps/juce-src` when present (otherwise downloaded), and ASIO
+is enabled when the Steinberg SDK is at `../_sdk/ASIO-SDK_2.3.4/ASIOSDK` (or pass `-DASIO_SDK_DIR=`).
+
+Progress and audio settings are saved in `%APPDATA%\GuitarCoach`.
+
+## Layout
+
+- `Source/core` - theory engine, pitch detection (YIN), note tracking, synth voice, lessons, progress
+- `Source/audio` - audio device and real-time engine
+- `Source/ui` - screens: Home, Music Theory, Improvisation, Practice, Audio
+- `Content/lessons.json` - lesson text and exercise settings
+- `Tests` - offline tests and the snapshot tool

@@ -1,0 +1,119 @@
+{
+  "lessons": [
+    {
+      "id": "L1-staff",
+      "level": 1,
+      "strand": "Reading",
+      "title": "The staff and the treble clef",
+      "summary": "Read the nine notes on the staff and play them in open position.",
+      "body": [
+        "## Five lines, four spaces",
+        "Music is written on a staff of five lines. Every line and every space stands for one letter name. Each step up, from a line to the next space or from a space to the next line, moves up one letter: A B C D E F G, then A again.",
+        "## The treble clef",
+        "The sign at the start of the staff is the treble clef, also called the G clef. Its inner curl circles the second line from the bottom, and that line is G.",
+        "- Lines, bottom to top: E G B D F",
+        "- Spaces, bottom to top: F A C E",
+        "## Guitar sounds an octave lower",
+        "Guitar music is written in treble clef but sounds one octave lower than written. That is the small 8 under the clef. The bottom line E is the E on the 4th string, 2nd fret, and that is the pitch the app listens for when you answer by playing.",
+        "## How to practise",
+        "Say each name out loud. Do not count up from the bottom line every time: learn landmarks. Bottom line E, middle line B, top line F, and the four spaces spell FACE. Then answer by clicking, and after that by playing each note on the guitar."
+      ],
+      "diagram": { "staff": [ "E3", "F3", "G3", "A3", "B3", "C4", "D4", "E4", "F4" ], "labels": true },
+      "exercises": [
+        { "type": "nameStaff", "title": "Name the note", "lo": "E3", "hi": "F4", "accidentals": false },
+        { "type": "writeStaff", "title": "Write the note", "lo": "E3", "hi": "F4", "accidentals": false },
+        { "type": "playStaff", "title": "Play what you read", "lo": "E3", "hi": "F4", "accidentals": false }
+      ]
+    },
+    {
+      "id": "L2-neck",
+      "level": 1,
+      "strand": "Fretboard",
+      "title": "Notes on the neck",
+      "summary": "Find the natural notes on every string, starting with the 6th and 5th.",
+      "body": [
+        "## Open strings",
+        "From the thickest string to the thinnest: E A D G B E. The 6th string is the low E and the 1st string is the high E, two octaves higher.",
+        "## One fret is one half step",
+        "Moving up one fret raises the note by one half step (one semitone). Most natural notes are two frets apart, except E to F and B to C, which are only one fret apart.",
+        "- 6th string: E 0, F 1, G 3, A 5, B 7, C 8, D 10, E 12",
+        "- 5th string: A 0, B 2, C 3, D 5, E 7, F 8, G 10, A 12",
+        "## Landmarks",
+        "- Fret 12 is the open string one octave higher. The fret markers at 3, 5, 7, 9 and 12 are your signposts.",
+        "- Fret 5 on one string gives the next higher open string, except on the 3rd (G) string, where it is fret 4.",
+        "- The same letter appears two strings higher and two frets higher (the octave shape), on the 6th to 4th and 5th to 3rd strings.",
+        "## Open position on the staff",
+        "Notes below the staff are written with short extra lines called ledger lines. The open low E is written below three ledger lines. In open position every natural note from low E up to G on the 1st string, 3rd fret, can be played within the first three frets."
+      ],
+      "diagram": { "fretboard": "naturals", "strings": [ 6, 5, 4, 3, 2, 1 ], "maxFret": 12 },
+      "exercises": [
+        { "type": "nameFret", "title": "Name it: 6th and 5th strings", "strings": [ 6, 5 ], "maxFret": 12, "accidentals": false },
+        { "type": "findFret", "title": "Find it: 6th and 5th strings", "strings": [ 6, 5 ], "maxFret": 12, "accidentals": false },
+        { "type": "nameFret", "title": "Name it: all strings", "strings": [ 6, 5, 4, 3, 2, 1 ], "maxFret": 12, "accidentals": false },
+        { "type": "playStaff", "title": "Play open position from the staff", "lo": "E2", "hi": "G4", "accidentals": false }
+      ]
+    },
+    {
+      "id": "L3-steps",
+      "level": 1,
+      "strand": "Theory",
+      "title": "Half steps, whole steps, sharps and flats",
+      "summary": "Measure in semitones and tones, and name the notes between the naturals.",
+      "body": [
+        "## Semitones and tones",
+        "A half step, also called a semitone, is the smallest distance in Western music: one fret on the guitar. A whole step, also called a tone, is two half steps: two frets. In this course distances are always given both ways, so 3 semitones is the same as 1½ tones.",
+        "## Sharps and flats",
+        "A sharp (♯) raises a note by one half step, one fret higher. A flat (♭) lowers it by one half step, one fret lower. A natural sign (♮) cancels a sharp or flat.",
+        "The note between F and G can be called F♯ or G♭: the same fret, two names. Notes like this are called enharmonic. There is no note between E and F, or between B and C.",
+        "## The chromatic scale",
+        "All twelve notes in a row, one fret apart, make the chromatic scale: C C♯ D D♯ E F F♯ G G♯ A A♯ B C, or with flats: C D♭ D E♭ E F G♭ G A♭ A B♭ B C. Play it up the 6th string from the open E to the 12th fret and say each name.",
+        "## On the staff",
+        "The sharp or flat is written just before the note head, on the same line or space. It lasts until the end of the bar."
+      ],
+      "diagram": { "fretboard": "chromatic", "strings": [ 6 ], "maxFret": 12 },
+      "exercises": [
+        { "type": "steps", "title": "Half step or whole step?" },
+        { "type": "nameFret", "title": "Name it with sharps and flats", "strings": [ 6, 5, 4, 3, 2, 1 ], "maxFret": 12, "accidentals": true },
+        { "type": "nameStaff", "title": "Read sharps and flats", "lo": "E3", "hi": "F4", "accidentals": true },
+        { "type": "writeStaff", "title": "Write sharps and flats", "lo": "E3", "hi": "F4", "accidentals": true }
+      ]
+    },
+    {
+      "id": "L4-intervals",
+      "level": 1,
+      "strand": "Intervals",
+      "title": "Intervals: semitones and tones from the root",
+      "summary": "Name the 13 intervals in an octave by sound, by shape and by distance.",
+      "body": [
+        "## What an interval is",
+        "An interval is the distance between two notes. It has a number and a quality. The number comes from counting letter names, counting both ends: C up to E is C D E, a 3rd. The quality (perfect, major, minor, augmented, diminished) comes from the exact number of semitones.",
+        "## The intervals in one octave",
+        "- 0 semitones · 0 tones · unison (P1)",
+        "- 1 · ½ · minor 2nd (m2)",
+        "- 2 · 1 · major 2nd (M2)",
+        "- 3 · 1½ · minor 3rd (m3)",
+        "- 4 · 2 · major 3rd (M3)",
+        "- 5 · 2½ · perfect 4th (P4)",
+        "- 6 · 3 · tritone (A4 or d5)",
+        "- 7 · 3½ · perfect 5th (P5)",
+        "- 8 · 4 · minor 6th (m6)",
+        "- 9 · 4½ · major 6th (M6)",
+        "- 10 · 5 · minor 7th (m7)",
+        "- 11 · 5½ · major 7th (M7)",
+        "- 12 · 6 · octave (P8)",
+        "## On the guitar",
+        "On one string, the number of frets is the number of semitones. Across strings: the same fret on the next higher string is a perfect 4th, except from the 3rd (G) to the 2nd (B) string, where it is a major 3rd. Two frets up on the next string is a perfect 5th, the power-chord shape.",
+        "## By ear",
+        "Sing the lower note, then the upper one. Major 3rds sound bright, minor 3rds darker, perfect 4ths and 5ths open and hollow, the tritone tense, and the octave like the same note higher."
+      ],
+      "diagram": { "intervals": "A2" },
+      "exercises": [
+        { "type": "intervalSemis", "title": "How many semitones?", "set": [ "P1", "m2", "M2", "m3", "M3", "P4", "A4", "P5", "m6", "M6", "m7", "M7", "P8" ] },
+        { "type": "intervalName", "title": "Name the interval", "set": [ "m2", "M2", "m3", "M3", "P4", "A4", "P5", "m6", "M6", "m7", "M7", "P8" ] },
+        { "type": "playInterval", "title": "Play the interval", "set": [ "M2", "m3", "M3", "P4", "P5", "M6", "P8" ] },
+        { "type": "earInterval", "title": "Ear: 3rds, 4ths, 5ths, octave", "set": [ "m3", "M3", "P4", "P5", "P8" ] },
+        { "type": "earInterval", "title": "Ear: all intervals", "set": [ "m2", "M2", "m3", "M3", "P4", "A4", "P5", "m6", "M6", "m7", "M7", "P8" ] }
+      ]
+    }
+  ]
+}

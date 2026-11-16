@@ -1,0 +1,390 @@
+#include "ExerciseView.h"
+
+ExerciseView::ExerciseView (AudioEngine& e, Progress& p) : engine (e), progress (p)
+{
+    addAndMakeVisible (backButton);
+    addChildComponent (staff);
+    addChildComponent (fretboard);
+    addChildComponent (listenButton);
+    addChildComponent (nextButton);
+    addChildComponent (againButton);
+
+    flatButton.setButtonText (theory::accidentalText (-1));
+    naturalButton.setButtonText (juce::String (juce::CharPointer_UTF8 ("\xe2\x99\xae")));
+    sharpButton.setButtonText (theory::accidentalText (1));
+    int acc = -1;
+    for (auto* b : { &flatButton, &naturalButton, &sharpButton })
+    {
+        addChildComponent (b);
+        b->setClickingTogglesState (true);
+        b->setRadioGroupId (77);
+        b->onClick = [this, acc] { staff.setAccidental (acc); };
+        ++acc;
+    }
+
+    backButton.onClick = [this] { stopTimer(); engine.stopNotes(); if (onBack) onBack(); };
+    listenButton.onClick = [this] { engine.stopNotes(); engine.playSequence (q.listenMidi); };
+    nextButton.onClick = [this]
+    {
+        if (! done)
+        {
+            // "Show answer"
+            done = true;
+            missed = true;
+            feedback = q.explanation;
+            feedbackColour = Palette::gold;
+            reveal (false);
+            updateButtons();
+            return;
+        }
+        nextQuestion();
+    };
+    againButton.onClick = [this] { start (*lesson, exerciseIndex); };
+
+    staff.onPlace = [this] (const theory::Note& n)
+    {
+        if (done || ! q.judgeStaff) return;
+        const bool ok = q.judgeStaff (n);
+        q.staffNotes = { n };
+        staff.setNotes (q.staffNotes, { ok ? Palette::green : Palette::red });
+        attempt (ok, ok ? juce::String() : "You wrote " + n.name (false) + " (" + theory::noteFromMidi (n.midi()).name (true) + " sounding).", false);
+    };
+
+    fretboard.onClick = [this] (int s, int f)
+    {
+        engine.playNote (theory::fretMidi (s, f), 0.0, 1.2);
+        if (done || ! q.judgeFret) return;
+        const bool ok = q.judgeFret (s, f);
+        if (! ok)
+        {
+            wrongMarks.push_back ({ s, f, theory::noteFromMidi (theory::fretMidi (s, f)).name(), 3 });
+            auto marks = q.fretMarks;
+            marks.insert (marks.end(), wrongMarks.begin(), wrongMarks.end());
+            fretboard.setMarks (marks);
+        }
+        attempt (ok, ok ? juce::String() : "That is " + theory::noteFromMidi (theory::fretMidi (s, f)).name (true) + ".", false);
+    };
+}
+
+void ExerciseView::start (const Lesson& l, int index, juce::int64 seed)
+{
+    lesson = &l;
+    exerciseIndex = index;
+    spec = l.exercises[(size_t) index];
+    rng.setSeed (seed != 0 ? seed : juce::Time::currentTimeMillis());
+    questionNumber = 0;
+    score = 0;
+    finished = false;
+    nextQuestion();
+}
+
+void ExerciseView::nextQuestion()
+{
+    stopTimer();
+    if (questionNumber >= questionsPerRound)
+    {
+        finish();
+        return;
+    }
+    ++questionNumber;
+    q = makeQuestion (spec, rng);
+    showQuestion();
+}
+
+void ExerciseView::showQuestion()
+{
+    done = missed = false;
+    feedback = {};
+    wrongMarks.clear();
+    questionShownAt = juce::Time::getMillisecondCounter();
+
+    const bool useStaff = ! q.staffNotes.empty() || q.staffClick || ! q.revealStaff.empty();
+    staff.setVisible (useStaff);
+    staff.setNotes (q.staffNotes);
+    staff.setClickable (q.staffClick);
+    staff.setAccidental (0);
+    naturalButton.setToggleState (true, juce::dontSendNotification);
+    for (auto* b : { &flatButton, &naturalButton, &sharpButton })
+        b->setVisible (q.staffAccidentalButtons);
+
+    fretboard.setVisible (q.showFretboard);
+    fretboard.setMaxFret (q.maxFret);
+    fretboard.setMarks (q.fretMarks);
+    fretboard.setClickable (q.fretClick);
+    fretboard.setLiveMidi (-1);
+
+    choiceButtons.clear();
+    for (int i = 0; i < q.choices.size(); ++i)
+    {
+        auto* b = choiceButtons.add (new juce::TextButton (q.choices[i]));
+        addAndMakeVisible (b);
+        b->onClick = [this, i]
+        {
+            const bool ok = q.judgeChoice ? q.judgeChoice (i) : i == q.correctChoice;
+            attempt (ok, {}, true, i);
+        };
+    }
+
+    listenButton.setVisible (! q.listenMidi.empty() && (q.autoListen || spec.type == "steps" || spec.type == "playInterval"));
+    if (q.autoListen)
+    {
+        engine.stopNotes();
+        engine.playSequence (q.listenMidi);
+    }
+
+    updateButtons();
+    resized();
+    repaint();
+}
+
+void ExerciseView::updateButtons()
+{
+    nextButton.setVisible (! finished && (done || q.acceptsPlaying || q.fretClick || q.staffClick));
+    nextButton.setButtonText (done ? (questionNumber >= questionsPerRound ? "Finish" : "Next") : "Show answer");
+    againButton.setVisible (finished);
+    listenButton.setVisible (! finished && ! q.listenMidi.empty() && (q.autoListen || done || spec.type == "steps" || spec.type == "playInterval"));
+    for (auto* b : choiceButtons)
+        b->setVisible (! finished);
+}
+
+void ExerciseView::attempt (bool correct, const juce::String& hint, bool isChoice, int choice)
+{
+    if (done)
+        return;
+
+    if (correct)
+    {
+        done = true;
+        if (! missed)
+            ++score;
+        feedback = (missed ? "Found it. " : "Right! ") + q.explanation;
+        feedbackColour = Palette::green;
+        reveal (true);
+        if (! missed)
+            startTimer (1600);   // straight on to the next question
+    }
+    else
+    {
+        missed = true;
+        if (isChoice)
+        {
+            done = true;
+            feedback = "Not quite. " + q.explanation;
+            feedbackColour = Palette::red;
+            if (choice >= 0 && choice < choiceButtons.size())
+                choiceButtons[choice]->setColour (juce::TextButton::buttonColourId, Palette::red.darker (0.2f));
+            reveal (false);
+        }
+        else
+        {
+            feedback = hint + " Try again, or press Show answer.";
+            feedbackColour = Palette::red;
+        }
+    }
+    updateButtons();
+    resized();
+    repaint();
+}
+
+void ExerciseView::reveal (bool correct)
+{
+    if (q.correctChoice >= 0 && q.correctChoice < choiceButtons.size())
+        choiceButtons[q.correctChoice]->setColour (juce::TextButton::buttonColourId, Palette::green.darker (0.3f));
+    if (! q.revealMarks.empty())
+    {
+        auto marks = q.revealMarks;
+        if (! correct)
+            marks.insert (marks.begin(), wrongMarks.begin(), wrongMarks.end());
+        fretboard.setMarks (marks);
+    }
+    if (! q.revealStaff.empty())
+    {
+        std::vector<theory::Note> shown = q.revealStaff;
+        std::vector<juce::Colour> cols (shown.size(), Palette::green.darker (0.4f));
+        staff.setVisible (true);
+        staff.setNotes (shown, cols, true);
+        staff.setClickable (false);
+    }
+    if (q.showFretboard == false && ! q.revealMarks.empty() && spec.type != "intervalSemis")
+        fretboard.setVisible (true);
+    if (spec.type == "intervalSemis")
+        fretboard.setVisible (true);
+}
+
+void ExerciseView::timerCallback()
+{
+    stopTimer();
+    nextQuestion();
+}
+
+void ExerciseView::finish()
+{
+    finished = true;
+    progress.recordExercise (lesson->exerciseKey (exerciseIndex), score, questionsPerRound);
+    staff.setVisible (false);
+    fretboard.setVisible (false);
+    for (auto* b : { &flatButton, &naturalButton, &sharpButton })
+        b->setVisible (false);
+    const bool pass = (double) score / questionsPerRound >= Progress::passMark;
+    feedback = pass ? "Passed! Come back tomorrow to keep it fresh, or try again for a perfect round."
+                    : "Keep at it: 8 out of 10 passes. Read the lesson again or slow down and try again.";
+    feedbackColour = pass ? Palette::green : Palette::gold;
+    updateButtons();
+    resized();
+    repaint();
+    if (onFinished)
+        onFinished();
+}
+
+void ExerciseView::notePlayed (const NoteEvent& e)
+{
+    if (finished || done || ! q.acceptsPlaying || ! q.judgePlayed)
+        return;
+    if (juce::Time::getMillisecondCounter() - questionShownAt < 500)
+        return;   // ignore the last note still ringing from the previous question
+    const bool ok = q.judgePlayed (e.midi);
+    attempt (ok, ok ? juce::String() : q.wrongPlayHint (e.midi), false);
+}
+
+void ExerciseView::pitchChanged (const PitchFrame& f)
+{
+    if (fretboard.isVisible())
+        fretboard.setLiveMidi (f.valid ? juce::roundToInt (f.midi) : -1);
+}
+
+void ExerciseView::simulateChoice (bool correct)
+{
+    if (q.choices.isEmpty())
+        return;
+    int i = q.correctChoice;
+    if (! correct)
+        i = (q.correctChoice + 1) % q.choices.size();
+    attempt (correct, {}, true, i);
+    stopTimer();
+}
+
+void ExerciseView::simulateFinish (int s)
+{
+    questionNumber = questionsPerRound;
+    score = s;
+    finish();
+}
+
+void ExerciseView::paint (juce::Graphics& g)
+{
+    auto r = getLocalBounds().reduced (16, 10);
+    auto top = r.removeFromTop (40);
+    top.removeFromLeft (110);
+    g.setColour (Palette::gold);
+    g.setFont (Fonts::ui (22.0f, true));
+    g.drawText (spec.title, top.removeFromLeft (top.getWidth() - 260), juce::Justification::centredLeft);
+    g.setColour (Palette::dim);
+    g.setFont (Fonts::ui (16.0f));
+    g.drawText (finished ? "Done" : "Question " + juce::String (questionNumber) + " of " + juce::String (questionsPerRound)
+                    + juce::String::fromUTF8 ("   ·   score ") + juce::String (score),
+                top, juce::Justification::centredRight);
+
+    // score dots
+    auto dots = r.removeFromTop (14);
+    for (int i = 0; i < questionsPerRound; ++i)
+    {
+        auto c = i < questionNumber - (done || finished ? 0 : 1) ? Palette::gold : Palette::panelLight;
+        g.setColour (c);
+        g.fillEllipse ((float) dots.getX() + i * 18.0f, (float) dots.getY() + 2, 10.0f, 10.0f);
+    }
+
+    r.removeFromTop (6);
+    g.setColour (Palette::text);
+    if (finished)
+    {
+        g.setFont (Fonts::ui (44.0f, true));
+        g.drawText (juce::String (score) + " / " + juce::String (questionsPerRound), r.removeFromTop (110), juce::Justification::centred);
+        g.setFont (Fonts::ui (19.0f));
+        g.setColour (feedbackColour);
+        g.drawFittedText (feedback, r.removeFromTop (60), juce::Justification::centred, 2);
+        const double best = progress.bestScore (lesson->exerciseKey (exerciseIndex));
+        g.setColour (Palette::dim);
+        g.setFont (Fonts::ui (16.0f));
+        g.drawText ("Best: " + juce::String (juce::roundToInt (best * 100)) + "%", r.removeFromTop (30), juce::Justification::centred);
+        return;
+    }
+
+    g.setFont (Fonts::ui (20.0f));
+    g.drawFittedText (q.prompt, r.removeFromTop (34), juce::Justification::centredLeft, 1);
+
+    if (q.acceptsPlaying)
+    {
+        g.setColour (Palette::blue);
+        g.setFont (Fonts::ui (14.0f));
+        g.drawText (juce::String (juce::CharPointer_UTF8 ("\xe2\x99\xaa")) + " Listening to your guitar", getLocalBounds().reduced (16, 10).removeFromTop (40).withTrimmedLeft (110).translated (0, 64).removeFromRight (240),
+                    juce::Justification::centredRight);
+    }
+
+    if (feedback.isNotEmpty())
+    {
+        auto fb = getLocalBounds().reduced (16, 10).removeFromBottom (96).removeFromTop (44);
+        g.setColour (feedbackColour.withAlpha (0.15f));
+        g.fillRoundedRectangle (fb.toFloat(), 6.0f);
+        g.setColour (feedbackColour.brighter (0.3f));
+        g.setFont (Fonts::ui (17.0f));
+        g.drawFittedText (feedback, fb.reduced (10, 2), juce::Justification::centredLeft, 2);
+    }
+}
+
+void ExerciseView::resized()
+{
+    auto r = getLocalBounds().reduced (16, 10);
+    backButton.setBounds (r.getX(), r.getY() + 4, 100, 32);
+    r.removeFromTop (40 + 14 + 6 + 34 + 8);
+
+    auto bottom = r.removeFromBottom (96);
+    bottom.removeFromTop (52);
+    nextButton.setBounds (bottom.removeFromRight (150).reduced (0, 2));
+    bottom.removeFromRight (10);
+    listenButton.setBounds (bottom.removeFromRight (120).reduced (0, 2));
+    againButton.setBounds (getLocalBounds().withSizeKeepingCentre (180, 40).translated (0, 90));
+
+    if (finished)
+        return;
+
+    // choices at the bottom of the work area
+    if (choiceButtons.size() > 0)
+    {
+        const int n = choiceButtons.size();
+        const int cols = q.choiceColumns > 0 ? juce::jmin (q.choiceColumns, n) : juce::jmin (n, 7);
+        const int rows = (n + cols - 1) / cols;
+        auto area = r.removeFromBottom (rows * 46);
+        const int w = juce::jmin (150, area.getWidth() / cols);
+        for (int i = 0; i < n; ++i)
+        {
+            const int row = i / cols, col = i % cols;
+            const int inRow = juce::jmin (cols, n - row * cols);
+            const int x0 = area.getX() + (area.getWidth() - inRow * w) / 2;
+            choiceButtons[i]->setBounds (juce::Rectangle<int> (x0 + col * w, area.getY() + row * 46, w, 46).reduced (3));
+        }
+        r.removeFromBottom (8);
+    }
+
+    const bool s = staff.isVisible(), f = fretboard.isVisible();
+    if (s && f)
+    {
+        auto st = r.removeFromTop (juce::jmin (190, r.getHeight() / 2));
+        staff.setBounds (st.withSizeKeepingCentre (juce::jmin (st.getWidth(), 560), st.getHeight()));
+        r.removeFromTop (8);
+        fretboard.setBounds (r.withSizeKeepingCentre (r.getWidth(), juce::jmin (r.getHeight(), 230)));
+    }
+    else if (s)
+    {
+        auto st = r;
+        if (q.staffAccidentalButtons)
+        {
+            auto acc = st.removeFromBottom (44).withSizeKeepingCentre (3 * 64, 40);
+            flatButton.setBounds (acc.removeFromLeft (64).reduced (3));
+            naturalButton.setBounds (acc.removeFromLeft (64).reduced (3));
+            sharpButton.setBounds (acc.removeFromLeft (64).reduced (3));
+        }
+        staff.setBounds (st.withSizeKeepingCentre (juce::jmin (st.getWidth(), 560), juce::jmin (st.getHeight(), 230)));
+    }
+    else if (f)
+        fretboard.setBounds (r.withSizeKeepingCentre (r.getWidth(), juce::jmin (r.getHeight(), 240)));
+}

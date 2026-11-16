@@ -1,0 +1,69 @@
+#pragma once
+#include <juce_core/juce_core.h>
+#include <optional>
+#include <vector>
+
+// Music theory engine: spelled notes, intervals, guitar fretboard. No UI, no audio.
+namespace theory
+{
+    constexpr int naturalPc[7] = { 0, 2, 4, 5, 7, 9, 11 };   // C D E F G A B
+
+    inline int mod12 (int x) { return ((x % 12) + 12) % 12; }
+
+    // A note with its spelling: letter 0..6 (C..B), accidental -2..+2 (flats/sharps), octave (C4 = middle C).
+    struct Note
+    {
+        int letter = 0, acc = 0, octave = 4;
+
+        int midi() const      { return 12 * (octave + 1) + naturalPc[letter] + acc; }
+        int pc() const        { return mod12 (naturalPc[letter] + acc); }
+        int diatonic() const  { return letter + 7 * octave; }   // staff step: one per line or space
+
+        // "C♯4" (unicode) or "C#4"
+        juce::String name (bool withOctave = false, bool unicode = true) const;
+
+        bool operator== (const Note& o) const { return letter == o.letter && acc == o.acc && octave == o.octave; }
+        bool operator!= (const Note& o) const { return ! (*this == o); }
+    };
+
+    Note noteFromMidi (int midi, bool preferFlats = false);
+    std::optional<Note> parseNote (const juce::String& text);   // "E2", "Bb3", "F#4", "C♯5"
+    juce::String accidentalText (int acc, bool unicode = true);
+    juce::String pcName (int pc, bool preferFlats = false);
+    juce::String pcNameBoth (int pc);                            // "C♯/D♭" for black keys, "C" for white
+    juce::String letterName (int letter);
+
+    // Intervals
+    struct Interval
+    {
+        int number = 1;        // 1 = unison, 3 = third, 8 = octave
+        int semitones = 0;
+        juce::String quality;  // "P", "M", "m", "A", "d"
+
+        juce::String shortName() const;   // "m3", "P5", "A4"
+        juce::String longName() const;    // "minor 3rd", "perfect 5th", "tritone (augmented 4th)"
+    };
+
+    Interval intervalBetween (const Note& lower, const Note& upper);
+    Interval intervalFromShort (const juce::String& shortName);   // "m3" -> {3, 3, "m"}
+    Note transposeUp (const Note& root, const Interval& interval);
+    juce::String semitonesText (int semitones);                  // 1 -> "1 semitone", 3 -> "3 semitones"
+    juce::String tonesText (int semitones);                      // 3 -> "1½ tones"
+    juce::String ordinal (int number);                           // 3 -> "3rd"
+
+    // the 13 intervals inside one octave, with their usual spelling (tritone as A4)
+    const std::vector<Interval>& octaveIntervals();
+
+    // Guitar in standard tuning. String 1 = high E, string 6 = low E.
+    constexpr int numStrings = 6;
+    constexpr int openMidi[7] = { 0, 64, 59, 55, 50, 45, 40 };   // index by string number
+    inline int fretMidi (int string, int fret) { return openMidi[string] + fret; }
+    juce::String stringName (int string);                        // "6th string (low E)"
+
+    struct FretPos { int string = 6, fret = 0; };
+    std::vector<FretPos> positionsOf (int midi, int maxFret);
+    std::vector<FretPos> positionsOfPc (int pc, int maxFret);
+
+    // Half and whole steps between two pitches: 1 = half, 2 = whole, other = neither
+    juce::String stepName (int semitones);
+}
