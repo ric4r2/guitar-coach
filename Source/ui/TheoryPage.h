@@ -1,6 +1,7 @@
 #pragma once
 #include "ExerciseView.h"
 #include "CircleView.h"
+#include "BluesChartView.h"
 
 // Lesson list on the left; on the right the lesson (diagram, text, exercises) or a running exercise.
 class TheoryPage : public juce::Component, public LiveInput
@@ -31,6 +32,7 @@ private:
     StaffView diagramStaff;
     FretboardView diagramFret;
     CircleView circle;
+    BluesChartView chartDiagram;
     std::vector<std::pair<juce::Rectangle<int>, juce::String>> levelHeads;
     int exerciseRowHeight = 50;
     RichText text;

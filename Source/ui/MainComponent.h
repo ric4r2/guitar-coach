@@ -1,12 +1,13 @@
 #pragma once
 #include "TheoryPage.h"
 #include "PracticePage.h"
+#include "ImprovPage.h"
 #include <juce_audio_utils/juce_audio_utils.h>
 
 class HomePage : public juce::Component
 {
 public:
-    HomePage (Progress&, const std::vector<Lesson>&);
+    HomePage (Progress&, const std::vector<Lesson>& theory, const std::vector<Lesson>& blues);
     std::function<void (int lesson)> onContinue;
     std::function<void (int page)> onGoTo;
     void refresh();
@@ -15,20 +16,10 @@ public:
 private:
     Progress& progress;
     const std::vector<Lesson>& lessons;
+    const std::vector<Lesson>& bluesLessons;
+    std::vector<Lick> licks;
     juce::TextButton continueButton, practiceButton { "Open Practice" };
     int nextLesson = 0;
-};
-
-class ImprovPage : public juce::Component
-{
-public:
-    ImprovPage();
-    void paint (juce::Graphics&) override;
-    void resized() override;
-private:
-    juce::ComboBox key;
-    juce::ToggleButton quickChange { "Quick change (IV in bar 2)" };
-    RichText text;
 };
 
 class AudioPage : public juce::Component, public LiveInput, private juce::Timer
@@ -62,6 +53,7 @@ public:
     void showPage (int page);
     TheoryPage& getTheoryPage() { return theoryPage; }
     PracticePage& getPracticePage() { return practicePage; }
+    ImprovPage& getImprovPage() { return improvPage; }
 
     void paint (juce::Graphics&) override;
     void resized() override;
@@ -70,7 +62,7 @@ private:
     AudioEngine& engine;
     Progress& progress;
     CoachLook look;
-    std::vector<Lesson> lessons;
+    std::vector<Lesson> allLessons, lessons, bluesLessons;   // lessons: the Music Theory track
 
     HomePage homePage;
     TheoryPage theoryPage;

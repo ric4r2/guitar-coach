@@ -49,6 +49,8 @@ public:
         const double seconds = std::clamp (3.5 - (midi - 40) * 0.05, 0.8, 3.5);
         loss = (float) std::pow (0.001, 1.0 / (seconds * hz));
         remaining = durationSamples;
+        targetDelay = delay;
+        bendWait = -1;
         releasing = false;
         level = 1.0f;
         active = true;
@@ -56,6 +58,14 @@ public:
     }
 
     void release() { releasing = true; }
+
+    // Bend the string: after waitSamples, glide by `semitones` (negative = release back) over glideSamples.
+    void bend (double semitones, int waitSamples, int glideSamples)
+    {
+        targetDelay = std::clamp (delay / std::pow (2.0, semitones / 12.0), 2.0, (double) line.size() - 3.0);
+        bendWait = std::max (0, waitSamples);
+        bendStep = (targetDelay - delay) / std::max (1, glideSamples);
+    }
     bool isActive() const { return active; }
     int getNote() const { return midiNote; }
 
@@ -67,6 +77,17 @@ public:
         const int size = (int) line.size();
         for (int i = 0; i < n; ++i)
         {
+            if (bendWait > 0)
+                --bendWait;
+            else if (bendWait == 0)
+            {
+                delay += bendStep;
+                if ((bendStep > 0 && delay >= targetDelay) || (bendStep <= 0 && delay <= targetDelay))
+                {
+                    delay = targetDelay;
+                    bendWait = -1;
+                }
+            }
             double readPos = writePos - delay;
             while (readPos < 0) readPos += size;
             const int i0 = (int) readPos;
@@ -96,7 +117,8 @@ public:
     }
 
 private:
-    double sr = 48000.0, delay = 100.0;
+    double sr = 48000.0, delay = 100.0, targetDelay = 100.0, bendStep = 0.0;
+    int bendWait = -1;
     std::vector<float> line;
     int writePos = 0, remaining = 0, midiNote = -1;
     float last = 0.0f, loss = 0.996f, level = 1.0f;

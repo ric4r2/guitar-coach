@@ -8,6 +8,8 @@ static constexpr int topLineStep = bottomLineStep + 8;   // written F5
 void StaffView::setNotes (std::vector<Note> sounding, std::vector<juce::Colour> c, bool showLabels)
 {
     columns.clear();
+    rhythm.clear();
+    rhythmBeats = 0.0;
     for (size_t i = 0; i < sounding.size(); ++i)
         columns.push_back ({ { sounding[i] }, i < c.size() ? c[i] : Palette::ink, sounding[i].name() });
     labels = showLabels;
@@ -18,6 +20,8 @@ void StaffView::setNotes (std::vector<Note> sounding, std::vector<juce::Colour> 
 void StaffView::setChords (std::vector<std::vector<Note>> chords, juce::StringArray l, std::vector<juce::Colour> c)
 {
     columns.clear();
+    rhythm.clear();
+    rhythmBeats = 0.0;
     for (size_t i = 0; i < chords.size(); ++i)
         columns.push_back ({ chords[i], i < c.size() ? c[i] : Palette::ink, l[(int) i] });
     labels = ! l.isEmpty();
@@ -78,7 +82,7 @@ void StaffView::drawKeySignature (juce::Graphics& g) const
         drawAccidental (g, sp * (4.9f + 1.1f * (float) i) + sp * 0.9f, keyFifths > 0 ? sharpSteps[i] : flatSteps[i], keyFifths > 0 ? 1 : -1, Palette::ink);
 }
 
-void StaffView::drawHead (juce::Graphics& g, float x, int step, juce::Colour c, bool ghost) const
+void StaffView::drawHead (juce::Graphics& g, float x, int step, juce::Colour c, bool ghost, bool filled) const
 {
     const float sp = spacing();
     const float y = yForStep (step);
@@ -89,6 +93,17 @@ void StaffView::drawHead (juce::Graphics& g, float x, int step, juce::Colour c, 
         g.fillRect (x - sp * 1.1f, yForStep (s) - 0.75f, sp * 2.2f, 1.5f);
     for (int s = topLineStep + 2; s <= step; s += 2)
         g.fillRect (x - sp * 1.1f, yForStep (s) - 0.75f, sp * 2.2f, 1.5f);
+
+    if (filled)
+    {
+        // quarter and shorter: a solid, slightly tilted oval
+        juce::Path solid;
+        solid.addEllipse (-sp * 0.62f, -sp * 0.44f, sp * 1.24f, sp * 0.88f);
+        solid.applyTransform (juce::AffineTransform::rotation (-0.35f));
+        g.setColour (ghost ? c.withAlpha (0.45f) : c);
+        g.fillPath (solid, juce::AffineTransform::translation (x, y));
+        return;
+    }
 
     // whole note: an oval ring with a tilted hollow
     juce::Path head;
@@ -138,6 +153,11 @@ void StaffView::paint (juce::Graphics& g)
     g.fillRect (r.getWidth() - sp * 0.6f - 1.5f, yForStep (topLineStep), 1.5f, yForStep (bottomLineStep) - yForStep (topLineStep));
     drawClef (g);
     drawKeySignature (g);
+    if (rhythmBeats > 0.0)
+    {
+        paintRhythm (g);
+        return;
+    }
 
     const int n = (int) columns.size();
     for (int i = 0; i < n; ++i)
@@ -192,4 +212,176 @@ void StaffView::mouseDown (const juce::MouseEvent& e)
     const int written = juce::jlimit (bottomLineStep - 8, topLineStep + 6, stepForY ((float) e.y));
     Note n { written % 7, accidental, written / 7 - 1 };   // sounding: an octave below written
     onPlace (n);
+}
+
+// ---------------------------------------------------------------- rhythm (licks)
+
+void StaffView::setRhythm (std::vector<RhythmNote> notes, double totalBeats, int beatsPerBar)
+{
+    columns.clear();
+    stepLabels.clear();
+    labels = false;
+    rhythm = std::move (notes);
+    rhythmBeats = juce::jmax (1.0, totalBeats);
+    rhythmBar = juce::jmax (1, beatsPerBar);
+    repaint();
+}
+
+float StaffView::xForBeat (double beat) const
+{
+    const float sp = spacing();
+    const float left = sp * 6.5f, right = (float) getWidth() - sp * 1.5f;
+    return left + (right - left) * (float) (beat / juce::jmax (1.0, rhythmBeats));
+}
+
+float StaffView::headXForBeat (double beat) const
+{
+    const float slot = xForBeat (0.5) - xForBeat (0.0);
+    return xForBeat (beat) + juce::jmin (slot * 0.5f, spacing() * 1.4f);
+}
+
+void StaffView::paintRhythm (juce::Graphics& g) const
+{
+    const float sp = spacing();
+    const float stemLen = sp * 3.3f;
+    auto headX = [&] (double beat) { return headXForBeat (beat); };
+    auto isTriplet = [] (double b) { const double f = b - std::floor (b + 1.0e-6); return std::abs (f - 1.0 / 3.0) < 0.02 || std::abs (f - 2.0 / 3.0) < 0.02; };
+    auto stepOf = [] (const RhythmNote& n) { return n.sounding.diatonic() + 7; };
+
+    // bar lines
+    g.setColour (Palette::ink);
+    for (int b = rhythmBar; b <= (int) std::round (rhythmBeats); b += rhythmBar)
+    {
+        const float x = b >= (int) std::round (rhythmBeats) ? (float) getWidth() - sp * 0.6f - 1.5f : xForBeat (b) - 1.0f;
+        g.fillRect (x, yForStep (topLineStep), 1.5f, yForStep (bottomLineStep) - yForStep (topLineStep));
+    }
+
+    // rests in the gaps
+    auto rest = [&] (double at, bool quarter)
+    {
+        g.setColour (Palette::ink);
+        g.setFont (Fonts::music (sp * (quarter ? 3.4f : 2.9f)));
+        const float x = headX (at);
+        g.drawText (juce::String (juce::CharPointer_UTF8 (quarter ? "\xf0\x9d\x84\xbd" : "\xf0\x9d\x84\xbe")),
+                    juce::Rectangle<float> (x - sp * 1.5f, yForStep (bottomLineStep + 4) - sp * 2.0f, sp * 3.0f, sp * 4.0f), juce::Justification::centred, false);
+    };
+    double restAt = 0.0;
+    auto fill = [&] (double until)
+    {
+        while (until - restAt > 0.45)
+        {
+            const double frac = restAt - std::floor (restAt + 1.0e-6);
+            const bool onBeat = frac < 0.02;
+            if (onBeat && until - restAt >= 0.98) { rest (restAt, true); restAt += 1.0; }
+            else { rest (restAt, false); restAt = onBeat ? restAt + 0.5 : std::floor (restAt + 1.0e-6) + 1.0; }
+        }
+    };
+    for (auto& n : rhythm)
+    {
+        fill (n.beat);
+        restAt = juce::jmax (restAt, n.beat + n.length);
+    }
+    fill (rhythmBeats);
+
+    // group short notes by beat for beams
+    std::vector<int> groupOf (rhythm.size(), -1);
+    std::vector<std::vector<int>> groups;
+    for (int i = 0; i < (int) rhythm.size(); ++i)
+    {
+        const auto& n = rhythm[(size_t) i];
+        if (n.length > 0.55)
+            continue;
+        const int beat = (int) std::floor (n.beat + 1.0e-6);
+        if (! groups.empty() && groupOf[(size_t) i - (i > 0 ? 1 : 0)] == (int) groups.size() - 1 && i > 0
+            && (int) std::floor (rhythm[(size_t) i - 1].beat + 1.0e-6) == beat)
+            groups.back().push_back (i);
+        else
+            groups.push_back ({ i });
+        groupOf[(size_t) i] = (int) groups.size() - 1;
+    }
+
+    // stem direction: by the note, or for a beamed group by its average
+    std::vector<bool> stemUp (rhythm.size(), true);
+    for (int i = 0; i < (int) rhythm.size(); ++i)
+        stemUp[(size_t) i] = stepOf (rhythm[(size_t) i]) < bottomLineStep + 4;
+    for (auto& grp : groups)
+    {
+        double avg = 0;
+        for (int i : grp) avg += stepOf (rhythm[(size_t) i]);
+        avg /= (double) grp.size();
+        for (int i : grp) stemUp[(size_t) i] = avg < bottomLineStep + 4;
+    }
+
+    for (int i = 0; i < (int) rhythm.size(); ++i)
+    {
+        const auto& n = rhythm[(size_t) i];
+        const float x = headX (n.beat);
+        const int step = stepOf (n);
+        const bool hollow = n.length >= 1.9;
+        drawHead (g, x, step, n.colour, false, ! hollow);
+        if (n.sounding.acc != 0)
+            drawAccidental (g, x - sp * 1.9f, step, n.sounding.acc, n.colour);
+        const bool dotted = std::abs (n.length - 1.5) < 0.05 || std::abs (n.length - 3.0) < 0.05 || std::abs (n.length - 0.75) < 0.05;
+        if (dotted)
+        {
+            g.setColour (n.colour);
+            const float dy = (step % 2 == bottomLineStep % 2) ? -sp * 0.5f : 0.0f;   // on a line: the dot goes in the space above
+            g.fillEllipse (x + sp * 1.05f, yForStep (step) + dy - sp * 0.18f, sp * 0.36f, sp * 0.36f);
+        }
+        if (n.length < 3.9 && groupOf[(size_t) i] < 0)
+        {
+            // a single stem (quarter, half, or a lone eighth with a flag)
+            const bool up = stemUp[(size_t) i];
+            const float sx = up ? x + sp * 0.62f : x - sp * 0.62f;
+            const float y0 = yForStep (step), y1 = up ? y0 - stemLen : y0 + stemLen;
+            g.setColour (n.colour);
+            g.drawLine (sx, y0, sx, y1, 1.4f);
+        }
+        if (n.above.isNotEmpty())
+        {
+            g.setColour (Palette::ink.withAlpha (0.8f));
+            g.setFont (Fonts::ui (sp * 1.05f, true));
+            g.drawText (n.above, juce::Rectangle<float> (x - sp * 2.0f, sp * 0.2f, sp * 4.0f, sp * 1.3f), juce::Justification::centred);
+        }
+    }
+
+    // beamed groups (and lone eighths as flags)
+    for (auto& grp : groups)
+    {
+        const bool up = stemUp[(size_t) grp.front()];
+        float beamY = up ? 1.0e9f : -1.0e9f;
+        for (int i : grp)
+        {
+            const float y = yForStep (stepOf (rhythm[(size_t) i]));
+            beamY = up ? juce::jmin (beamY, y - stemLen) : juce::jmax (beamY, y + stemLen);
+        }
+        g.setColour (Palette::ink);
+        float firstX = 0, lastX = 0;
+        for (size_t k = 0; k < grp.size(); ++k)
+        {
+            const auto& n = rhythm[(size_t) grp[k]];
+            const float x = headX (n.beat);
+            const float sx = up ? x + sp * 0.62f : x - sp * 0.62f;
+            g.drawLine (sx, yForStep (stepOf (n)), sx, beamY, 1.4f);
+            if (k == 0) firstX = sx;
+            lastX = sx;
+        }
+        const float thick = sp * 0.45f;
+        if (grp.size() > 1)
+            g.fillRect (firstX, up ? beamY : beamY - thick, lastX - firstX + 1.4f, thick);
+        else
+        {
+            // flag
+            juce::Path flag;
+            flag.startNewSubPath (firstX, beamY);
+            flag.quadraticTo (firstX + sp * 1.1f, beamY + (up ? sp * 1.2f : -sp * 1.2f), firstX + sp * 0.8f, beamY + (up ? sp * 2.4f : -sp * 2.4f));
+            g.strokePath (flag, juce::PathStrokeType (sp * 0.3f));
+        }
+        if (grp.size() == 3 && isTriplet (rhythm[(size_t) grp[1]].beat))
+        {
+            g.setFont (Fonts::ui (sp * 1.1f, true));
+            const float ty = up ? beamY - sp * 1.5f : beamY + sp * 0.2f;
+            g.drawText ("3", juce::Rectangle<float> ((firstX + lastX) * 0.5f - sp, ty, sp * 2, sp * 1.3f), juce::Justification::centred);
+        }
+    }
 }

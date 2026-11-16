@@ -5,6 +5,8 @@
 #include "core/GuitarVoice.h"
 #include "core/Progress.h"
 #include "core/Fingerings.h"
+#include "core/BackingTrack.h"
+#include "core/Licks.h"
 #include <cstdio>
 #include <set>
 
@@ -56,10 +58,13 @@ static void testTheory()
 static void testLessons()
 {
     const auto lessons = loadLessons();
-    CHECK (lessons.size() == 10, "10 lessons, got %d", (int) lessons.size());
+    CHECK (lessons.size() == 19, "19 lessons, got %d", (int) lessons.size());
+    int blues = 0;
+    for (auto& l : lessons) blues += l.track == "blues" ? 1 : 0;
+    CHECK (blues == 9, "9 blues lessons (%d)", blues);
     std::set<juce::String> ids;
     for (auto& l : lessons)
-        CHECK (ids.insert (l.id).second && l.level >= 1 && l.level <= 2 && ! l.exercises.empty(), "%s: unique id, level, exercises", l.id.toRawUTF8());
+        CHECK (ids.insert (l.id).second && l.level >= 1 && l.level <= 3 && (l.track == "theory" || l.track == "blues") && ! l.exercises.empty(), "%s: unique id, level, exercises", l.id.toRawUTF8());
     juce::Random rng (42);
     int questions = 0;
     for (auto& l : lessons)
@@ -92,9 +97,10 @@ static void testLessons()
                     for (auto& n : q.sequence)
                         CHECK (std::abs (n.acc) <= 1, "%s: no double accidentals (%s)", what, n.name().toRawUTF8());
                     if (ex.type == "spellScale" || ex.type == "writeScale" || ex.type == "playScale")
-                        CHECK (q.sequence.size() == 8 && q.sequence.front().pc() == q.sequence.back().pc(), "%s: root to root", what);
+                        CHECK ((int) q.sequence.size() == scaleType (ex.params.getProperty ("scale", "major").toString()).size() + 1
+                               && q.sequence.front().pc() == q.sequence.back().pc(), "%s: root to root", what);
                     if (ex.type == "spellTriad" || ex.type == "playTriad")
-                        CHECK (q.sequence.size() == 3, "%s: three notes", what);
+                        CHECK (q.sequence.size() == 3 || q.sequence.size() == 4, "%s: chord tones", what);
                     for (size_t k = 1; k < q.sequence.size(); ++k)
                         CHECK (q.sequence[k].midi() > q.sequence[k - 1].midi(), "%s: ascending", what);
                 }
@@ -430,6 +436,168 @@ static void testRunScore()
     CHECK (! s.clean && s.evenness < 0.75, "uneven run: %.2f", s.evenness);
 }
 
+static void testBackingTrack()
+{
+    // every form and feel: plays, stays in range, follows the bars
+    for (int form = 0; form < (int) bluesForms().size(); ++form)
+        for (int feel = 0; feel < 4; ++feel)
+        {
+            BackingTrack t;
+            t.prepare (48000.0);
+            BackingSettings s;
+            s.form = form;
+            s.feel = feel;
+            s.bpm = 120.0;          // a bar is 2 seconds
+            s.keyPc = (form * 5 + feel) % 12;
+            t.setSettings (s);
+            t.start();
+            std::vector<float> buf (480);
+            double sumSq = 0, peak = 0;
+            bool finite = true;
+            int barAt3s = -9, barAt27s = -9, chorusAt27s = -9;
+            const int blocks = 48000 * 28 / 480;
+            for (int b = 0; b < blocks; ++b)
+            {
+                std::fill (buf.begin(), buf.end(), 0.0f);
+                t.render (buf.data(), (int) buf.size());
+                for (auto x : buf)
+                {
+                    finite = finite && std::isfinite (x);
+                    sumSq += (double) x * x;
+                    peak = std::max (peak, (double) std::abs (x));
+                }
+                const double secs = (b + 1) * 480 / 48000.0;
+                if (std::abs (secs - 1.0) < 0.005) CHECK (t.getBar() == -1, "count-in first (bar %d)", t.getBar());
+                if (std::abs (secs - 3.0) < 0.005) barAt3s = t.getBar();
+                if (std::abs (secs - 27.0) < 0.005) { barAt27s = t.getBar(); chorusAt27s = t.getChorus(); }
+            }
+            const double rms = std::sqrt (sumSq / (blocks * 480.0));
+            CHECK (finite && peak < 1.5 && rms > 0.02, "form %d feel %d: rms %.3f peak %.2f", form, feel, rms, peak);
+            CHECK (barAt3s == 0 && barAt27s == 0 && chorusAt27s == 1, "form %d feel %d: bars %d %d, chorus %d", form, feel, barAt3s, barAt27s, chorusAt27s);
+        }
+
+    // a two-bar excerpt stops by itself; muted parts make no sound
+    {
+        BackingTrack t;
+        t.prepare (48000.0);
+        BackingSettings s;
+        s.countIn = false;
+        s.stopAfterBars = 2;
+        s.bpm = 120.0;
+        t.setSettings (s);
+        t.start();
+        std::vector<float> buf (480);
+        for (int b = 0; b < 100 * 5; ++b) { std::fill (buf.begin(), buf.end(), 0.0f); t.render (buf.data(), 480); }
+        CHECK (! t.isPlaying(), "excerpt stopped after 2 bars");
+
+        BackingTrack q;
+        q.prepare (48000.0);
+        s.stopAfterBars = 0;
+        s.drums = s.bass = s.guitar = s.keys = false;
+        q.setSettings (s);
+        q.start();
+        double sum = 0;
+        for (int b = 0; b < 400; ++b) { std::fill (buf.begin(), buf.end(), 0.0f); q.render (buf.data(), 480); for (auto x : buf) sum += std::abs (x); }
+        CHECK (sum < 1.0e-3, "all parts muted: silence (%.4f)", sum);
+    }
+
+    CHECK (bluesChordName (9, { 5, "7" }) == "D7" && bluesChordName (4, { 7, "7" }) == "B7", "chord names");
+    CHECK (bluesChordName (5, { 6, "dim7" }) == "Bdim7" && bluesChordName (9, { 8, "7" }) == "F7", "jazz and minor names");
+    CHECK (bluesRoman ({ 5, "7" }, false) == "IV7" && bluesRoman ({ 8, "7" }, true) == "bVI7", "numerals");
+    for (auto& f : bluesForms())
+        CHECK (f.bars.size() == 12, "%s has 12 bars", f.id.toRawUTF8());
+}
+
+static void testLicks()
+{
+    const auto licks = loadLicks();
+    CHECK (licks.size() >= 12, "%d licks", (int) licks.size());
+    std::set<juce::String> ids;
+    for (auto& l : licks)
+    {
+        const auto what = l.id.toRawUTF8();
+        CHECK (ids.insert (l.id).second && l.name.isNotEmpty() && l.description.isNotEmpty() && l.notes.size() >= 3, "%s: complete", what);
+        double last = -1;
+        for (size_t i = 0; i < l.notes.size(); ++i)
+        {
+            const auto& n = l.notes[i];
+            CHECK (n.string >= 1 && n.string <= 6 && n.fret >= 0 && n.fret <= 17 && n.beat > last && n.beat + n.length <= l.beats + 1.0e-6, "%s: note %d", what, (int) i);
+            CHECK ((n.tech != "b" && n.tech != "r") || n.bend == 1 || n.bend == 2, "%s: bend size", what);
+            if (i > 0)
+                CHECK (n.targetMidi() != l.notes[i - 1].targetMidi(), "%s: notes %d and %d are different pitches (the detector needs that)", what, (int) i - 1, (int) i);
+            last = n.beat;
+        }
+        // in every key it stays on the neck, and moves by the right amount
+        for (int pc = 0; pc < 12; ++pc)
+        {
+            const auto t = transposeLick (l, pc);
+            for (size_t i = 0; i < t.notes.size(); ++i)
+            {
+                CHECK (t.notes[i].fret >= 0 && t.notes[i].fret <= 17, "%s in %d: fret %d", what, pc, t.notes[i].fret);
+                CHECK (mod12 (t.notes[i].targetMidi() - l.notes[i].targetMidi() - (pc - 9)) == 0, "%s: transposed pitch", what);
+            }
+        }
+        // played perfectly (with the fretted note heard before each bend), the follower finishes with no mistakes
+        LickFollower f;
+        f.reset (l);
+        double time = 0;
+        for (auto& n : l.notes)
+        {
+            if (n.tech == "b") CHECK (f.feed (n.fretMidi(), time) == LickFollower::Result::ignored, "%s: pre-bend note forgiven", what);
+            f.feed (n.targetMidi(), time += 0.3);
+        }
+        CHECK (f.finished() && f.mistakes() == 0, "%s: clean run (%d mistakes)", what, f.mistakes());
+    }
+
+    // slides and wrong notes
+    Lick slide;
+    slide.notes = { { 3, 5, 0, 0.5 }, { 3, 9, 0.5, 1, 0, "s" }, { 2, 8, 1.5, 0.5 } };
+    LickFollower f;
+    f.reset (slide);
+    f.feed (60, 0.0);
+    CHECK (f.feed (62, 0.1) == LickFollower::Result::ignored, "slid-through note forgiven");
+    CHECK (f.feed (64, 0.2) == LickFollower::Result::hit, "slide target");
+    CHECK (f.feed (70, 0.4) == LickFollower::Result::wrong && f.mistakes() == 1, "wrong note counted");
+    CHECK (f.feed (67, 0.6) == LickFollower::Result::finished, "finished");
+
+    // rhythm: exact at any tempo scores 1; random timing scores low
+    const std::vector<double> written { 0, 0.5, 1, 1.5, 2, 2.5, 3 };
+    std::vector<double> exact, slowExact, sloppy;
+    juce::Random r (5);
+    for (auto b : written) { exact.push_back (0.25 + b * 0.5); slowExact.push_back (1.0 + b * 0.9); sloppy.push_back (b * 0.5 + (r.nextFloat() - 0.5) * 0.4); }
+    CHECK (rhythmScore (written, exact) > 0.99 && rhythmScore (written, slowExact) > 0.99, "exact rhythm");
+    CHECK (rhythmScore (written, sloppy) < 0.7, "sloppy rhythm: %.2f", rhythmScore (written, sloppy));
+    CHECK (std::abs (swingBeat (1.5, true) - (1.0 + 2.0 / 3.0)) < 1.0e-9 && swingBeat (1.5, false) == 1.5 && swingBeat (2.0, true) == 2.0, "swing");
+
+    // a bent note played by the synth is heard at its target pitch
+    {
+        InputAnalyzer a;
+        a.prepare (48000.0);
+        GuitarVoice v;
+        v.prepare (48000.0);
+        v.start (62, 0.9f, 48000);
+        v.bend (2.0, 4800, 4800);   // after 0.1 s, a whole step over 0.1 s
+        std::vector<float> block (128);
+        std::vector<int> heard;
+        for (int b = 0; b < 48000 / 128; ++b)
+        {
+            std::fill (block.begin(), block.end(), 0.0f);
+            v.render (block.data(), 128);
+            for (auto& x : block) x *= 0.3f;
+            a.push (block.data(), 128);
+            NoteEvent e;
+            bool got = false;
+            while (a.analyze (e, got)) if (got) heard.push_back (e.midi);
+        }
+        CHECK (! heard.empty() && heard.back() == 64, "bend D3 to E3 heard as E3 (last %d, %d events)", heard.empty() ? -1 : heard.back(), (int) heard.size());
+    }
+
+    CHECK (chordNotes (*parseNote ("A3"), chordType ("dominant7")).size() == 4 && names (chordNotes (*parseNote ("A3"), chordType ("dominant7"))) == "A C# E G", "A7");
+    CHECK (names (chordNotes (*parseNote ("B3"), chordType ("halfDiminished"))) == "B D F A", "Bm7b5");
+    CHECK (names (chordNotes (*parseNote ("C3"), chordType ("diminished7"))) == "C Eb Gb Bbb", "Cdim7");
+    CHECK (names (scaleNotes (*parseNote ("A3"), scaleType ("mixolydian"), false)) == "A B C# D E F# G", "A Mixolydian");
+}
+
 static void testProgress()
 {
     auto file = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("guitarcoach-test-progress.json");
@@ -461,6 +629,8 @@ int main()
     std::printf ("scales\n");    testScalesAndChords();
     std::printf ("fingerings\n"); testFingerings();
     std::printf ("runs\n");      testRunScore();
+    std::printf ("backing\n");   testBackingTrack();
+    std::printf ("licks\n");     testLicks();
     std::printf ("lessons\n");   testLessons();
     std::printf ("pitch\n");     testPitch();
     std::printf ("progress\n");  testProgress();

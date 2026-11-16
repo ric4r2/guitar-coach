@@ -3,6 +3,7 @@
 #include "core/InputAnalyzer.h"
 #include "core/GuitarVoice.h"
 #include "core/Metronome.h"
+#include "core/BackingTrack.h"
 #include <array>
 
 // The audio side of the app: listens to the guitar (pitch and note detection on its own thread),
@@ -29,6 +30,8 @@ public:
 
     // output
     void playNote (int midi, double delaySeconds = 0.0, double durationSeconds = 1.5, float velocity = 0.8f);
+    // a bent note: starts at midi, glides by bendSemitones (negative = release) after bendAfterSeconds
+    void playBentNote (int midi, double delaySeconds, double durationSeconds, float bendSemitones, double bendAfterSeconds, float velocity = 0.8f);
     void playSequence (const std::vector<int>& midis, double gapSeconds = 0.75, double durationSeconds = 1.2);
     void stopNotes();
 
@@ -39,6 +42,9 @@ public:
     int getMetronomePulse() const { return metronome.getPulse(); }
 
     std::atomic<float> outputVolume { 0.8f };
+
+    // blues backing tracks
+    BackingTrack& getBacking() { return backing; }
 
 private:
     void audioDeviceIOCallbackWithContext (const float* const* in, int numIn, float* const* out, int numOut,
@@ -55,7 +61,7 @@ private:
     std::atomic<int> inputChannel { -1 };
     std::vector<float> monoIn, mixOut;
 
-    struct NoteCommand { int midi; float velocity; int delaySamples; int durationSamples; };
+    struct NoteCommand { int midi; float velocity; int delaySamples; int durationSamples; float bend = 0.0f; int bendAfterSamples = 0; };
     juce::AbstractFifo commandFifo { 128 };
     std::array<NoteCommand, 128> commands {};
     std::array<NoteCommand, 64> pending {};
@@ -68,6 +74,7 @@ private:
     std::array<GuitarVoice, 8> voices;
     int nextVoice = 0;
     Metronome metronome;
+    BackingTrack backing;
     double sampleRate = 48000.0;
     std::atomic<bool> prepared { false };
     bool started = false;

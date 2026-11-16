@@ -286,6 +286,237 @@
         { "type": "intervalShape", "title": "Name the shape: all intervals", "set": [ "m2", "M2", "m3", "M3", "P4", "A4", "P5", "m6", "M6", "m7", "M7", "P8" ] },
         { "type": "playInterval", "title": "Play the interval from any root", "set": [ "m3", "M3", "P4", "P5", "M6", "m7", "P8" ] }
       ]
+    },
+    {
+      "id": "B1-form",
+      "track": "blues",
+      "level": 1,
+      "strand": "Blues",
+      "title": "The 12-bar blues",
+      "summary": "Three chords, twelve bars: the form under almost every blues.",
+      "body": [
+        "## Twelve bars, three chords",
+        "A blues chorus is 12 bars of 4 beats. It uses three chords built on the 1st, 4th and 5th notes of the key: the I, IV and V. In A they are A, D and E; in E they are E, A and B.",
+        "- Bars 1-4: I I I I (the statement)",
+        "- Bars 5-8: IV IV I I (the answer)",
+        "- Bars 9-12: V IV I V (the punchline and the turnaround)",
+        "The last bar, the V, is the turnaround: it pulls back to bar 1 for the next chorus. Songs repeat this chorus again and again, with a sung line in each group of four bars.",
+        "## Dominant 7th chords",
+        "In blues, all three chords are usually dominant 7th chords: a major triad with a minor 7th on top. A7 is A C♯ E G: root, 3, 5, ♭7. The ♭7 gives the rough, unresolved sound of the blues, and in a blues it never needs to resolve.",
+        "## Think in numbers",
+        "Learn the form as numbers, not chord names. Then you can play it in any key: find the I, count up the major scale to 4 and 5. On the guitar the IV is the same fret one string higher, and the V is two frets above that.",
+        "## Listen for it",
+        "Put on any blues and count the bars out loud. The change to the IV in bar 5 is easy to hear: the bass goes up a 4th and the music opens up. The V in bar 9 is the most tense moment of the chorus."
+      ],
+      "diagram": { "bluesChart": "standard", "key": "A" },
+      "exercises": [
+        { "type": "bluesChart", "title": "Which chord is in that bar?", "forms": [ "standard" ], "roots": [ "A", "E" ] },
+        { "type": "bluesNumbers", "title": "I, IV and V in any key", "forms": [ "standard" ], "roots": [ "A", "E", "G", "C", "D", "F", "Bb" ] },
+        { "type": "spellTriad", "title": "Spell dominant 7th chords", "set": [ "dominant7" ], "roots": [ "A", "D", "E", "G", "C", "B", "F", "Bb" ] },
+        { "type": "earBluesChange", "title": "Ear: I to IV or I to V?" }
+      ]
+    },
+    {
+      "id": "B2-feel",
+      "track": "blues",
+      "level": 1,
+      "strand": "Blues",
+      "title": "Shuffle, straight, slow and funk",
+      "summary": "The same 12 bars feel completely different with a different groove.",
+      "body": [
+        "## Shuffle",
+        "Most blues swings. Each beat is split in three, like a triplet, and the eighth notes fall on the first and third parts: a long note and a short one, da-ga da-ga. Say \"Hump-ty Dump-ty\". This is the shuffle, and when you play eighth notes over it, play them long-short too.",
+        "## Straight",
+        "In a straight feel (rock and roll, Chuck Berry style) each beat is split in two equal halves: one-and two-and. The same licks sound harder and more driving.",
+        "## Slow blues",
+        "Slow blues counts four slow beats per bar, each split in three: 12 pulses per bar, written in 12/8. There is lots of space, so every note counts: bend slowly, use vibrato, and leave gaps.",
+        "## Funk",
+        "Funk blues splits the beat in four (sixteenth notes) and the bass plays a busy, syncopated riff. Short, percussive notes work best.",
+        "## How to practise",
+        "In the Backing tracks tab, play the same 12 bars in each feel, at a slow tempo, and just play the root of each chord in time. Then play one lick over each feel and hear how its rhythm has to change."
+      ],
+      "diagram": { "bluesChart": "standard", "key": "E" },
+      "exercises": [
+        { "type": "earFeel", "title": "Ear: shuffle or straight?", "feels": [ 0, 1 ] },
+        { "type": "earFeel", "title": "Ear: all four feels", "feels": [ 0, 1, 2, 3 ] }
+      ]
+    },
+    {
+      "id": "B3-box1",
+      "track": "blues",
+      "level": 1,
+      "strand": "Blues",
+      "title": "Minor pentatonic, box 1",
+      "summary": "Five notes that work over the whole blues, in the shape everyone starts with.",
+      "body": [
+        "## Five notes",
+        "The minor pentatonic scale has five notes: 1, ♭3, 4, 5, ♭7. In A: A C D E G. Leave out the 2nd and 6th of natural minor and nothing is left that can clash, which is why it works over all three chords of a blues.",
+        "## Box 1",
+        "Put your index finger on the root on the 6th string (fret 5 for A, fret 12 or 0 for E). Box 1 is two notes on every string, within four frets: index finger and ring finger on most strings, index and pinky where the notes are three frets apart.",
+        "- 6th string: 1 and ♭3",
+        "- 5th string: 4 and 5",
+        "- 4th string: ♭7 and 1",
+        "- 3rd string: ♭3 and 4",
+        "- 2nd string: 5 and ♭7",
+        "- 1st string: 1 and ♭3",
+        "There are three roots in the box: 6th string, 4th string and 1st string. Always know where they are; phrases sound finished when they end on one.",
+        "## How to practise",
+        "Play the box up and down with the metronome (Practice > Scales, minor pentatonic, Box 1). Say the degree of each note out loud. Then improvise over a backing track using only the 4th and 3rd strings: four notes are enough to make music."
+      ],
+      "diagram": { "box": { "root": "A", "scale": "minorPentatonic", "index": 0 } },
+      "exercises": [
+        { "type": "spellScale", "title": "Spell minor pentatonic scales", "scale": "minorPentatonic", "roots": [ "A", "E", "D", "G", "C", "B" ] },
+        { "type": "boxDegree", "title": "Degrees in box 1", "scale": "minorPentatonic", "boxes": [ 0 ], "roots": [ "A", "E", "G", "C", "D" ] },
+        { "type": "playScale", "title": "Play the scale", "scale": "minorPentatonic", "roots": [ "A", "E", "G", "C", "D" ] }
+      ]
+    },
+    {
+      "id": "B4-bluesScale",
+      "track": "blues",
+      "level": 1,
+      "strand": "Blues",
+      "title": "The blues scale and the blue note",
+      "summary": "Add the ♭5 to the minor pentatonic and you have the blues scale.",
+      "body": [
+        "## One extra note",
+        "The blues scale is the minor pentatonic with one note added between the 4 and the 5: the ♭5, also called the blue note. In A: A C D E♭ E G.",
+        "## How to use it",
+        "The ♭5 is tense and sour on its own. Use it as a passing note, on the way from the 4 to the 5 or back, or as a quick hammer-on and pull-off. Sitting on it for long sounds wrong; brushing past it sounds like the blues.",
+        "## Where it is",
+        "In box 1 the blue note is on the 5th string, one fret above the 4, and on the 3rd string, one fret above the 4 again. Those two places give you most of the classic blues-scale licks.",
+        "## Blue notes in general",
+        "Singers and guitarists bend many notes a little: the ♭3 towards the 3, the ♭7 towards the 7, the ♭5 towards the 5. These in-between pitches are what makes blues sound vocal. Lesson 6 covers bends."
+      ],
+      "diagram": { "box": { "root": "A", "scale": "blues", "index": 0 } },
+      "exercises": [
+        { "type": "spellScale", "title": "Spell blues scales", "scale": "blues", "roots": [ "A", "E", "D", "G", "C" ] },
+        { "type": "earScale", "title": "Ear: minor pentatonic or blues scale?", "set": [ "minorPentatonic", "blues" ] },
+        { "type": "playScale", "title": "Play the blues scale", "scale": "blues", "roots": [ "A", "E", "G", "C", "D" ] }
+      ]
+    },
+    {
+      "id": "B5-boxes",
+      "track": "blues",
+      "level": 2,
+      "strand": "Blues",
+      "title": "Five boxes across the neck",
+      "summary": "Link the five pentatonic shapes so the whole neck is yours.",
+      "body": [
+        "## Five shapes, one scale",
+        "The five notes of the minor pentatonic repeat all over the neck. Starting each shape from the next note of the scale on the 6th string gives five boxes. Box 1 starts on the root, box 2 on the ♭3, box 3 on the 4, box 4 on the 5 and box 5 on the ♭7. After box 5 comes box 1 again, an octave higher.",
+        "## They overlap",
+        "The top of each box is the bottom of the next one: the notes on the right edge of box 1 are the notes on the left edge of box 2. Learn the boxes in pairs, 1 and 2, then 2 and 3, and slide between them on one string.",
+        "## Find the roots",
+        "Every box has two or three roots. Find them first in each box (the gold dots on the diagram), then the rest of the shape hangs around them.",
+        "## Same shapes, other keys",
+        "The boxes never change shape. Moving to another key just slides them all up or down the neck: in A box 1 is at fret 5, in C at fret 8, in E at fret 0 or 12."
+      ],
+      "diagram": { "boxes": { "root": "A", "scale": "minorPentatonic" } },
+      "exercises": [
+        { "type": "boxDegree", "title": "Degrees in all five boxes", "scale": "minorPentatonic", "roots": [ "A", "E", "G", "C", "D" ] },
+        { "type": "boxDegree", "title": "Degrees in the blues scale boxes", "scale": "blues", "roots": [ "A", "E", "G" ] },
+        { "type": "playScale", "title": "Play the scale in any box", "scale": "minorPentatonic", "roots": [ "A", "C", "D", "G", "B", "F" ] }
+      ]
+    },
+    {
+      "id": "B6-phrasing",
+      "track": "blues",
+      "level": 2,
+      "strand": "Blues",
+      "title": "Bends, slides, vibrato and phrasing",
+      "summary": "How to make five notes talk: expressive technique and call and response.",
+      "body": [
+        "## Bends",
+        "Push the string across the fret to raise its pitch. Aim for a real note: a whole step (two frets higher) or a half step (one fret). The musical bends in the minor pentatonic are the 4 up to the 5, the ♭7 up to the root, and the ♭3 up a half step to the major 3rd. Push with three fingers, not one, and check your target by playing the fretted note first.",
+        "## Release, slides, hammer-ons and pull-offs",
+        "- Release: let a bent note back down without picking again.",
+        "- Slide: pick one note and slide to another on the same string, often to change box.",
+        "- Hammer-on and pull-off: sound a second note with the fretting hand alone. Smoother and faster than picking every note.",
+        "## Vibrato",
+        "Vibrato is a small, steady bend and release, repeated. Add it to long notes, especially the last note of a phrase. Wide and slow sounds like B.B. King; narrow and fast is more nervous.",
+        "## Call and response",
+        "Blues is a conversation. Play a short phrase (the call), leave space, and then answer it with a phrase that ends on a root. Repeat a good phrase instead of always playing new ones: the 12-bar form itself repeats its first line in bars 1-4 and 5-8.",
+        "## Learn licks",
+        "The Licks tab has phrases in notation, tab and on the neck. Learn one, play it in every key, then change its rhythm and its last note. A lick you can vary is worth ten you can only copy."
+      ],
+      "diagram": { "box": { "root": "A", "scale": "minorPentatonic", "index": 0 } },
+      "exercises": [
+        { "type": "bendTarget", "title": "Where does the bend go?", "roots": [ "A", "E", "G", "C", "D" ] },
+        { "type": "playBend", "title": "Play the bend in tune", "roots": [ "A", "G", "C" ] }
+      ]
+    },
+    {
+      "id": "B7-majorPent",
+      "track": "blues",
+      "level": 2,
+      "strand": "Blues",
+      "title": "Major pentatonic and mixing it with minor",
+      "summary": "The sweeter side of the blues, and how to move between major and minor.",
+      "body": [
+        "## Five other notes",
+        "The major pentatonic is 1, 2, 3, 5, 6. In A: A B C♯ E F♯. It is the major scale without the 4th and 7th, and it sounds happy, country and sweet.",
+        "## The same shapes",
+        "A major pentatonic has the same notes as F♯ minor pentatonic, its relative minor, three frets lower. So box 1 played three frets down from the A minor box (with your index finger at fret 2) is A major pentatonic. You already know the shapes; only the root moves.",
+        "## Mixing major and minor",
+        "Over the I chord, which has a major 3rd, the major pentatonic fits perfectly. Over the IV it gets risky (its 3rd clashes with the ♭7 of the IV chord). A very common approach: major pentatonic over the I, minor pentatonic over the IV and V, and the ♭3 bent up towards the 3 to slide between them.",
+        "## Listen for it",
+        "Major pentatonic phrases sound like they are smiling; minor pentatonic phrases sound like they are complaining. Most great blues players move between the two inside one solo."
+      ],
+      "diagram": { "box": { "root": "A", "scale": "majorPentatonic", "index": 0 } },
+      "exercises": [
+        { "type": "spellScale", "title": "Spell major pentatonic scales", "scale": "majorPentatonic", "roots": [ "A", "E", "G", "C", "D", "F" ] },
+        { "type": "earScale", "title": "Ear: major or minor pentatonic?", "set": [ "majorPentatonic", "minorPentatonic" ] },
+        { "type": "boxDegree", "title": "Degrees in the major pentatonic boxes", "scale": "majorPentatonic", "roots": [ "A", "E", "G", "C" ] }
+      ]
+    },
+    {
+      "id": "B8-chordTones",
+      "track": "blues",
+      "level": 3,
+      "strand": "Blues",
+      "title": "Chord tones and Mixolydian",
+      "summary": "Follow the changes: aim for the 3rd and 7th of each chord.",
+      "body": [
+        "## Playing the changes",
+        "The pentatonic scale fits the whole blues, but it ignores the chords. Strong players also follow the chords: they land on a note of the chord that is playing, at the moment it starts. That is called playing the changes, and it is the main skill Gleason's book builds.",
+        "## The 3rd and the 7th",
+        "The root and 5th of a chord are fine but bland. The 3rd and the 7th are the notes that tell the ear which chord it is. In A: over A7 aim for C♯ (the 3) and G (the ♭7); over D7, F♯ and C; over E7, G♯ and D.",
+        "Notice that G, the ♭7 of A7, moves only a half step to F♯, the 3 of D7. Moving by the smallest step from one chord's 3rd or 7th to the next chord's is called a guide-tone line. It makes a solo sound like it knows where it is going.",
+        "## Mixolydian",
+        "The scale that contains all the notes of a dominant 7th chord is Mixolydian: a major scale with a ♭7, 1 2 3 4 5 6 ♭7. A Mixolydian is A B C♯ D E F♯ G, the notes of D major starting on A. Over each chord of a blues you can play that chord's own Mixolydian: A Mixolydian over A7, D Mixolydian over D7, E Mixolydian over E7.",
+        "## How to practise",
+        "Play a backing track and only play the 3rd of each chord, on beat 1 of every bar. Then the 7th. Then join them with a few pentatonic notes in between."
+      ],
+      "diagram": { "scale": { "root": "A3", "type": "mixolydian" } },
+      "exercises": [
+        { "type": "chordTone", "title": "Chord tones of I, IV and V", "forms": [ "standard" ], "roots": [ "A", "E", "G", "C", "D", "F" ] },
+        { "type": "spellScale", "title": "Spell Mixolydian scales", "scale": "mixolydian", "roots": [ "A", "D", "E", "G", "C", "F" ] },
+        { "type": "spellTriad", "title": "Spell all 7th chords of the blues", "set": [ "dominant7" ], "roots": [ "C", "Db", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B" ] }
+      ]
+    },
+    {
+      "id": "B9-forms",
+      "track": "blues",
+      "level": 3,
+      "strand": "Blues",
+      "title": "Quick change, minor blues and jazz blues",
+      "summary": "Three common variations of the 12 bars.",
+      "body": [
+        "## Quick change",
+        "Go to the IV in bar 2 and back to the I in bar 3: I IV I I | IV IV I I | V IV I V. It breaks up the four long bars of the I and is used in many Chicago blues.",
+        "## Minor blues",
+        "All chords minor except the V: Im7 for bars 1-4, IVm7 in bars 5-6, back to Im7, then ♭VI7 to V7 in bars 9-10 and Im7 to finish. In A minor: Am7, Dm7, F7, E7. Use the minor pentatonic or natural minor, and the ♭VI to V7 move is the dramatic moment.",
+        "## Jazz blues",
+        "Jazz players keep the 12-bar outline but add more chords: a II-V into the IV in bar 4, a diminished chord in bar 6, the VI7 in bar 8 leading to a II-V in bars 9-10, and a turnaround in bars 11-12. In F: F7 B♭7 F7 Cm7-F7 | B♭7 B°7 F7 D7 | Gm7 C7 F7-D7 Gm7-C7.",
+        "This is exactly the harmony Gleason's book works with, so you will meet the jazz blues again in Level 4. For now, hear how the chords move and try targeting the 3rd of each one."
+      ],
+      "diagram": { "bluesChart": "jazz", "key": "F" },
+      "exercises": [
+        { "type": "bluesChart", "title": "Quick change: which chord?", "forms": [ "quickChange" ], "roots": [ "A", "E", "G", "C" ] },
+        { "type": "bluesChart", "title": "Minor blues: which chord?", "forms": [ "minor" ], "roots": [ "A", "E", "D", "G", "C" ] },
+        { "type": "bluesNumbers", "title": "Jazz blues numbers", "forms": [ "jazz" ], "roots": [ "F", "Bb", "C", "G" ] },
+        { "type": "chordTone", "title": "Chord tones of the minor blues", "forms": [ "minor" ], "roots": [ "A", "E", "D", "G" ] }
+      ]
     }
   ]
 }

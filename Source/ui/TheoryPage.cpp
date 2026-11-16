@@ -1,4 +1,5 @@
 #include "TheoryPage.h"
+#include "core/Fingerings.h"
 
 using namespace theory;
 
@@ -15,6 +16,7 @@ TheoryPage::TheoryPage (AudioEngine& e, Progress& p, const std::vector<Lesson>& 
     addAndMakeVisible (diagramStaff);
     addAndMakeVisible (diagramFret);
     addChildComponent (circle);
+    addChildComponent (chartDiagram);
     circle.onSelect = [this] (int fifths, bool minor)
     {
         // play the tonic triad of the clicked key
@@ -84,9 +86,48 @@ void TheoryPage::setupDiagram()
     diagramStaff.setVisible (false);
     diagramFret.setVisible (false);
     circle.setVisible (false);
+    chartDiagram.setVisible (false);
     diagramStaff.setKeySignature (0);
 
-    if (d.hasProperty ("scale"))
+    auto degreeMarks = [] (int rootPc, const ScaleType& st, const std::vector<FretNote>& notes)
+    {
+        std::vector<FretMark> marks;
+        for (auto& n : notes)
+            marks.push_back ({ n.string, n.fret, n.degree == 0 ? juce::String ("R") : degreeLabel (st.intervals[(size_t) n.degree]), n.degree == 0 ? 1 : 0 });
+        juce::ignoreUnused (rootPc);
+        return marks;
+    };
+
+    if (d.hasProperty ("bluesChart"))
+    {
+        int index = 0;
+        for (int i = 0; i < (int) bluesForms().size(); ++i)
+            if (bluesForms()[(size_t) i].id == d["bluesChart"].toString())
+                index = i;
+        chartDiagram.setForm (index);
+        chartDiagram.setKey (parseNote (d.getProperty ("key", "A").toString()).value_or (Note { 5, 0, 3 }).pc());
+        chartDiagram.setVisible (true);
+    }
+    else if (d.hasProperty ("box") || d.hasProperty ("boxes"))
+    {
+        const auto& spec = d.hasProperty ("box") ? d["box"] : d["boxes"];
+        const int rootPc = parseNote (spec["root"].toString()).value_or (Note { 5, 0, 3 }).pc();
+        const auto& st = scaleType (spec["scale"].toString());
+        const auto boxes = positionFingerings (rootPc, st);
+        std::vector<FretMark> marks;
+        if (d.hasProperty ("box"))
+            marks = degreeMarks (rootPc, st, boxes[(size_t) juce::jlimit (0, (int) boxes.size() - 1, (int) spec.getProperty ("index", 0))].notes);
+        else
+            for (int s = 1; s <= 6; ++s)
+                for (int f = 0; f <= 15; ++f)
+                    for (int k = 0; k < st.size(); ++k)
+                        if (mod12 (fretMidi (s, f) - rootPc) == st.intervals[(size_t) k].semitones)
+                            marks.push_back ({ s, f, k == 0 ? juce::String ("R") : degreeLabel (st.intervals[(size_t) k]), k == 0 ? 1 : 0 });
+        diagramFret.setMaxFret (15);
+        diagramFret.setMarks (marks);
+        diagramFret.setVisible (true);
+    }
+    else if (d.hasProperty ("scale"))
     {
         const auto root = parseNote (d["scale"]["root"].toString()).value_or (Note { 0, 0, 3 });
         const auto notes = scaleNotes (root, scaleType (d["scale"]["type"].toString()));
@@ -199,6 +240,7 @@ void TheoryPage::openExercise (int lessonIndex, int exerciseIndex, juce::int64 s
     diagramStaff.setVisible (false);
     diagramFret.setVisible (false);
     circle.setVisible (false);
+    chartDiagram.setVisible (false);
     textViewport.setVisible (false);
     exercise.setVisible (true);
     resized();
@@ -282,6 +324,7 @@ void TheoryPage::resized()
     diagramStaff.setBounds (diagram.withSizeKeepingCentre (juce::jmin (diagram.getWidth(), 720), diagram.getHeight()));
     diagramFret.setBounds (diagram);
     circle.setBounds (diagram.withSizeKeepingCentre (diagram.getHeight(), diagram.getHeight()));
+    chartDiagram.setBounds (diagram.withSizeKeepingCentre (juce::jmin (diagram.getWidth(), 640), diagram.getHeight()));
     right.removeFromTop (12);
 
     auto exCol = right.removeFromRight (juce::jmax (330, right.getWidth() * 2 / 5));

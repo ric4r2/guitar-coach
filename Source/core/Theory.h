@@ -72,11 +72,12 @@ namespace theory
     {
         juce::String id, name;
         std::vector<Interval> intervals;   // from the root, ascending, without the octave
+        int parent = 0;                    // semitones up to the major scale with the same notes (minor: 3, Mixolydian: 5)
         bool isMinor() const;              // has a minor 3rd: its relative major is 3 semitones up
         int size() const { return (int) intervals.size(); }
     };
 
-    // major, naturalMinor, harmonicMinor, melodicMinor, majorPentatonic, minorPentatonic, blues
+    // major, naturalMinor, harmonicMinor, melodicMinor, majorPentatonic, minorPentatonic, blues, mixolydian
     const std::vector<ScaleType>& scaleTypes();
     const ScaleType& scaleType (const juce::String& id);              // unknown ids give major
     std::vector<Note> scaleNotes (const Note& root, const ScaleType&, bool withOctave = true);
@@ -98,7 +99,8 @@ namespace theory
         std::vector<Interval> intervals;
     };
     const std::vector<ChordType>& triadTypes();                        // major, minor, diminished, augmented
-    const ChordType& chordType (const juce::String& id);
+    const std::vector<ChordType>& seventhTypes();                      // dominant7, major7, minor7, halfDiminished, diminished7
+    const ChordType& chordType (const juce::String& id);              // triads and sevenths
     std::vector<Note> chordNotes (const Note& root, const ChordType&);  // root position, close
     std::vector<Note> invert (std::vector<Note> rootPosition, int inversion);   // lowest notes go up an octave
     juce::String chordName (const Note& root, const ChordType&);       // "C♯ minor"

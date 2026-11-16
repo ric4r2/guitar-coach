@@ -13,6 +13,7 @@ struct ExerciseSpec
 struct Lesson
 {
     juce::String id, strand, title, summary;
+    juce::String track = "theory";     // "theory" (Music Theory tab) or "blues" (Improvisation tab)
     int level = 1;
     juce::StringArray body;      // "## heading", "- bullet" or a paragraph
     juce::var diagram;
@@ -58,6 +59,11 @@ struct Question
     bool listenBeforeAnswer = false;    // the Listen button is there from the start, not only after answering
     bool listenAsChord = false;         // after the notes one by one, play them together
     double listenGap = 0.75;            // seconds between notes
+    std::vector<std::vector<int>> listenChords;   // played one after another as block chords, listenGap apart
+    int listenBacking = -1;             // a feel: Listen plays two bars of the backing band in it
+    int listenBackingKey = 9;
+    double listenBackingBpm = 90.0;
+    std::function<bool (int midi)> ignorePlayed;  // played notes that are neither right nor wrong (on the way up a bend)
 
     // staff extras
     bool staffChord = false;            // staffNotes / revealStaff drawn as one chord

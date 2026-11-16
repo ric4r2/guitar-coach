@@ -16,12 +16,14 @@ FetchContent_Declare(JUCE
 FetchContent_MakeAvailable(JUCE)
 
 # Lesson text and exercise settings, embedded in the program.
-juce_add_binary_data(GuitarCoachContent SOURCES Content/lessons.json)
+juce_add_binary_data(GuitarCoachContent SOURCES Content/lessons.json Content/licks.json)
 
 # Everything that is not UI: music theory, pitch detection, synth voices, lessons and progress.
 set(CORE_SOURCES
     Source/core/Theory.cpp
     Source/core/Fingerings.cpp
+    Source/core/BackingTrack.cpp
+    Source/core/Licks.cpp
     Source/core/InputAnalyzer.cpp
     Source/core/Lessons.cpp
     Source/core/Progress.cpp)
@@ -33,6 +35,7 @@ set(UI_SOURCES
     Source/ui/ExerciseView.cpp
     Source/ui/TheoryPage.cpp
     Source/ui/PracticePage.cpp
+    Source/ui/ImprovPage.cpp
     Source/ui/MainComponent.cpp)
 
 juce_add_gui_app(GuitarCoach

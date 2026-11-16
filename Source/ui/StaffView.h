@@ -16,6 +16,18 @@ public:
     void setKeySignature (int fifths) { keyFifths = juce::jlimit (-7, 7, fifths); repaint(); }
     void setStepLabels (juce::StringArray s) { stepLabels = std::move (s); repaint(); }   // between neighbouring columns
 
+    // Rhythm: notes placed in time, with stems, beams, triplets, rests and bar lines (for licks).
+    struct RhythmNote
+    {
+        theory::Note sounding;
+        double beat = 0.0, length = 1.0;
+        juce::String above;                 // "full", "1/2", "h", "p", "sl."
+        juce::Colour colour { 0xff1d1f23 };
+    };
+    void setRhythm (std::vector<RhythmNote> notes, double totalBeats, int beatsPerBar = 4);
+    float xForBeat (double beat) const;       // left edge of the beat's slot
+    float headXForBeat (double beat) const;   // where a note head on that beat is drawn
+
     void setClickable (bool c) { clickable = c; hoverStep = -1000; repaint(); }
     void setAccidental (int a) { accidental = a; repaint(); }
     int getAccidental() const { return accidental; }
@@ -34,6 +46,10 @@ private:
         juce::String label;
     };
     std::vector<Column> columns;
+    std::vector<RhythmNote> rhythm;
+    double rhythmBeats = 0.0;
+    int rhythmBar = 4;
+    void paintRhythm (juce::Graphics&) const;
     juce::StringArray stepLabels;
     bool labels = false, clickable = false;
     int accidental = 0, keyFifths = 0;
@@ -45,7 +61,7 @@ private:
     int stepForY (float y) const;
     float noteX (int index, int count) const;
     float firstNoteX() const;
-    void drawHead (juce::Graphics&, float x, int writtenStep, juce::Colour c, bool ghost) const;
+    void drawHead (juce::Graphics&, float x, int writtenStep, juce::Colour c, bool ghost, bool filled = false) const;
     void drawAccidental (juce::Graphics&, float x, int writtenStep, int acc, juce::Colour c) const;
     void drawColumn (juce::Graphics&, float x, const Column&) const;
     void drawClef (juce::Graphics&) const;

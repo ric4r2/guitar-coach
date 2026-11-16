@@ -22,7 +22,7 @@ ExerciseView::ExerciseView (AudioEngine& e, Progress& p) : engine (e), progress 
         ++acc;
     }
 
-    backButton.onClick = [this] { stopTimer(); engine.stopNotes(); if (onBack) onBack(); };
+    backButton.onClick = [this] { stopTimer(); engine.stopNotes(); engine.getBacking().stop(); if (onBack) onBack(); };
     listenButton.onClick = [this] { playListen(); };
     nextButton.onClick = [this]
     {
@@ -178,7 +178,8 @@ void ExerciseView::updateButtons()
     nextButton.setVisible (! finished && (done || q.acceptsPlaying || q.fretClick || q.staffClick));
     nextButton.setButtonText (done ? (questionNumber >= questionsPerRound ? "Finish" : "Next") : "Show answer");
     againButton.setVisible (finished);
-    listenButton.setVisible (! finished && ! q.listenMidi.empty() && (q.autoListen || done || q.listenBeforeAnswer));
+    const bool canListen = ! q.listenMidi.empty() || ! q.listenChords.empty() || q.listenBacking >= 0;
+    listenButton.setVisible (! finished && canListen && (q.autoListen || done || q.listenBeforeAnswer));
     for (auto* b : choiceButtons)
         b->setVisible (! finished);
 }
@@ -285,6 +286,8 @@ void ExerciseView::notePlayed (const NoteEvent& e)
         return;
     if (juce::Time::getMillisecondCounter() - questionShownAt < 500)
         return;   // ignore the last note still ringing from the previous question
+    if (q.ignorePlayed && q.ignorePlayed (e.midi))
+        return;
     if (! q.sequence.empty())
     {
         sequenceAnswer (sequenceMatches (e.midi), "You played " + theory::noteFromMidi (e.midi).name (true) + ".");
@@ -303,6 +306,26 @@ void ExerciseView::pitchChanged (const PitchFrame& f)
 void ExerciseView::playListen()
 {
     engine.stopNotes();
+    if (q.listenBacking >= 0)
+    {
+        // two bars of the backing band, no count-in
+        BackingSettings b;
+        b.keyPc = q.listenBackingKey;
+        b.feel = q.listenBacking;
+        b.bpm = q.listenBackingBpm;
+        b.countIn = false;
+        b.stopAfterBars = 2;
+        engine.getBacking().setSettings (b);
+        engine.getBacking().start();
+        return;
+    }
+    if (! q.listenChords.empty())
+    {
+        for (size_t c = 0; c < q.listenChords.size(); ++c)
+            for (int m : q.listenChords[c])
+                engine.playNote (m, q.listenGap * (double) c, q.listenGap * 0.95, 0.55f);
+        return;
+    }
     engine.playSequence (q.listenMidi, q.listenGap, juce::jmax (0.6, q.listenGap * 1.6));
     if (q.listenAsChord)
     {

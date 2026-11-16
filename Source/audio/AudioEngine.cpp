@@ -118,6 +118,7 @@ void AudioEngine::audioDeviceAboutToStart (juce::AudioIODevice* device)
     for (auto& v : voices)
         v.prepare (sampleRate);
     metronome.prepare (sampleRate);
+    backing.prepare (sampleRate);
     numPending = 0;
     prepared.store (true);
 }
@@ -172,6 +173,8 @@ void AudioEngine::audioDeviceIOCallbackWithContext (const float* const* in, int 
         if (cmd.delaySamples < numSamples)
         {
             voices[(size_t) nextVoice].start (cmd.midi, cmd.velocity, cmd.durationSamples);
+            if (cmd.bend != 0.0f)
+                voices[(size_t) nextVoice].bend (cmd.bend, cmd.bendAfterSamples, (int) (0.12 * sampleRate));
             nextVoice = (nextVoice + 1) % (int) voices.size();
             pending[(size_t) i] = pending[(size_t) --numPending];
         }
@@ -183,6 +186,7 @@ void AudioEngine::audioDeviceIOCallbackWithContext (const float* const* in, int 
     }
     for (auto& v : voices)
         v.render (mix, numSamples);
+    backing.render (mix, numSamples);
 
     const float vol = outputVolume.load() * 0.45f;
     juce::FloatVectorOperations::multiply (mix, vol, numSamples);
@@ -236,6 +240,15 @@ void AudioEngine::playNote (int midi, double delaySeconds, double durationSecond
 {
     const auto scope = commandFifo.write (1);
     NoteCommand cmd { midi, velocity, (int) (delaySeconds * sampleRate), juce::jmax (1, (int) (durationSeconds * sampleRate)) };
+    if (scope.blockSize1 > 0) commands[(size_t) scope.startIndex1] = cmd;
+    else if (scope.blockSize2 > 0) commands[(size_t) scope.startIndex2] = cmd;
+}
+
+void AudioEngine::playBentNote (int midi, double delaySeconds, double durationSeconds, float bendSemitones, double bendAfterSeconds, float velocity)
+{
+    const auto scope = commandFifo.write (1);
+    NoteCommand cmd { midi, velocity, (int) (delaySeconds * sampleRate), juce::jmax (1, (int) (durationSeconds * sampleRate)),
+                      bendSemitones, (int) (bendAfterSeconds * sampleRate) };
     if (scope.blockSize1 > 0) commands[(size_t) scope.startIndex1] = cmd;
     else if (scope.blockSize2 > 0) commands[(size_t) scope.startIndex2] = cmd;
 }

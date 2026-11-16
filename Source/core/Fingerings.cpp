@@ -60,7 +60,7 @@ std::vector<Fingering> positionFingerings (int rootPc, const ScaleType& t)
     if (t.size() == 7)
     {
         // the windows of the relative major's CAGED shapes, filled with this scale's notes
-        const int majorTonic = mod12 (rootPc + (t.isMinor() ? 3 : 0));
+        const int majorTonic = mod12 (rootPc + t.parent);
         struct Shape { int offset; const char* name; };
         for (auto sh : { Shape { 0, "E shape" }, Shape { 2, "D shape" }, Shape { 4, "C shape" }, Shape { 7, "A shape" }, Shape { 9, "G shape" } })
         {

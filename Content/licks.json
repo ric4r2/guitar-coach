@@ -1,0 +1,57 @@
+{
+  "comment": "Licks written in A. Notes: [string, fret, beat, length in beats, technique, bend in semitones]. Techniques: h hammer-on, p pull-off, s slide, b bend, r release, v vibrato.",
+  "licks": [
+    { "id": "walkdown", "name": "Box 1 walk-down", "level": 1, "feel": "shuffle", "scale": "minorPentatonic", "beats": 4,
+      "description": "Straight down box 1 from the high C to the root on the 4th string. The first lick to get under your fingers: two notes per string, index and ring or pinky.",
+      "notes": [ [1, 8, 0, 0.5], [1, 5, 0.5, 0.5], [2, 8, 1, 0.5], [2, 5, 1.5, 0.5], [3, 7, 2, 0.5], [3, 5, 2.5, 0.5], [4, 7, 3, 1, "v"] ] },
+
+    { "id": "bendFifth", "name": "Bend up to the 5th", "level": 1, "feel": "shuffle", "scale": "minorPentatonic", "beats": 4,
+      "description": "Bend the 4 (D) on the 3rd string a whole step until it sounds like the 5 (E). Use three fingers to push, and check the pitch against the E on the 2nd string, 5th fret.",
+      "notes": [ [3, 7, 0, 1, "b", 2], [2, 8, 1, 0.5], [1, 5, 1.5, 2, "v"] ] },
+
+    { "id": "hammerPull", "name": "Hammer and pull", "level": 1, "feel": "shuffle", "scale": "minorPentatonic", "beats": 4,
+      "description": "Pick only the first note on each string and hammer on to the second. Then pull off from D back to C. Legato makes the line flow instead of sounding picked.",
+      "notes": [ [4, 5, 0, 0.5], [4, 7, 0.5, 0.5, "h"], [3, 5, 1, 0.5], [3, 7, 1.5, 0.5, "h"], [3, 5, 2, 0.5, "p"], [4, 7, 2.5, 1.5, "v"] ] },
+
+    { "id": "blueNote", "name": "The blue note", "level": 1, "feel": "shuffle", "scale": "blues", "beats": 4,
+      "description": "Climb from the b3 to the b5 (E-flat, the blue note) and fall back to the root. Do not sit on the b5: it is a passing colour next to the 4 and the 5. Here it is a quick step up from the 4 and straight back.",
+      "notes": [ [3, 5, 0, 0.5], [3, 7, 0.5, 0.5], [3, 8, 1, 0.5, "h"], [3, 7, 1.5, 0.5, "p"], [3, 5, 2, 0.5, "p"], [4, 7, 2.5, 1.5] ] },
+
+    { "id": "bendRelease", "name": "Bend and release", "level": 1, "feel": "shuffle", "scale": "minorPentatonic", "beats": 4,
+      "description": "Bend the b7 (G) up to the root (A), let it back down to G without picking again, then walk down to the root.",
+      "notes": [ [2, 8, 0, 1, "b", 2], [2, 8, 1, 0.5, "r", 2], [2, 5, 1.5, 0.5], [3, 7, 2, 0.5], [3, 5, 2.5, 0.5], [4, 7, 3, 1] ] },
+
+    { "id": "lowRiff", "name": "Low-string riff", "level": 1, "feel": "shuffle", "scale": "blues", "beats": 4,
+      "description": "A bass-register phrase up through the blues scale from the low root, with the blue note on the 5th string. Good as a riff to repeat over the I chord.",
+      "notes": [ [6, 5, 0, 0.5], [6, 8, 0.5, 0.5], [5, 5, 1, 0.5], [5, 6, 1.5, 0.5], [5, 7, 2, 0.5], [4, 5, 2.5, 0.5], [4, 7, 3, 1] ] },
+
+    { "id": "majorPent", "name": "Major pentatonic sweetness", "level": 1, "feel": "shuffle", "scale": "majorPentatonic", "beats": 4,
+      "description": "The same pattern as box 1, three frets lower, is A major pentatonic: brighter and sweeter. Use it over the I chord, and go back to minor for the IV and V.",
+      "notes": [ [3, 2, 0, 0.5], [3, 4, 0.5, 0.5], [2, 2, 1, 0.5], [2, 5, 1.5, 0.5], [1, 2, 2, 0.5], [1, 5, 2.5, 1.5, "v"] ] },
+
+    { "id": "majorThird", "name": "Half-step bend to the major 3rd", "level": 2, "feel": "shuffle", "scale": "minorPentatonic", "beats": 4,
+      "description": "Bend the b3 (C) a half step to C-sharp, the 3rd of the A7 chord. Major and minor at once: the essential blues sound.",
+      "notes": [ [3, 5, 0, 1, "b", 1], [4, 7, 1, 0.5], [4, 5, 1.5, 0.5], [4, 7, 2, 2, "v"] ] },
+
+    { "id": "tripletCascade", "name": "Triplet cascade", "level": 2, "feel": "slow", "scale": "minorPentatonic", "beats": 4,
+      "description": "Box 1 down in triplets for a slow 12/8 blues. Keep every note the same length and land on the root right on beat 3.",
+      "notes": [ [1, 8, 0, 0.333], [1, 5, 0.333, 0.333], [2, 8, 0.667, 0.333], [2, 5, 1, 0.333], [3, 7, 1.333, 0.333], [3, 5, 1.667, 0.333], [4, 7, 2, 2, "v"] ] },
+
+    { "id": "boxTwo", "name": "Box 2 climb", "level": 2, "feel": "shuffle", "scale": "minorPentatonic", "beats": 4,
+      "description": "Up through box 2 and a whole-step bend from the 4 (D) to the 5 (E) on the top string. Box 2 starts where box 1 ends.",
+      "notes": [ [3, 7, 0, 0.5], [3, 9, 0.5, 0.5], [2, 8, 1, 0.5], [2, 10, 1.5, 0.5], [1, 8, 2, 0.5], [1, 10, 2.5, 1.5, "b", 2] ] },
+
+    { "id": "slideFifth", "name": "Slide up to the 5th", "level": 2, "feel": "shuffle", "scale": "minorPentatonic", "beats": 4,
+      "description": "Slide from the b3 to the 5 on the 3rd string to move from box 1 into box 2, then finish on the b3 up top.",
+      "notes": [ [3, 5, 0, 0.5], [3, 9, 0.5, 1, "s"], [2, 8, 1.5, 0.5], [2, 10, 2, 0.5], [1, 8, 2.5, 1.5, "v"] ] },
+
+    { "id": "turnaround", "name": "Turnaround walk-down", "level": 2, "feel": "shuffle", "scale": "blues", "beats": 4,
+      "description": "Bars 11 and 12 lead back to the top of the form. This one walks down chromatically from the root to the 5, ready for the V chord.",
+      "notes": [ [4, 7, 0, 0.5], [4, 5, 0.5, 0.5], [4, 4, 1, 0.5], [4, 3, 1.5, 0.5], [5, 7, 2, 2] ] },
+
+    { "id": "callAnswer", "name": "Call and answer", "level": 2, "feel": "shuffle", "scale": "minorPentatonic", "beats": 8,
+      "description": "Two bars: a call (repeated bends up high) and an answer that walks down to the low root. Play the call, leave space, answer. This is how blues phrases talk.",
+      "notes": [ [2, 8, 0, 0.5, "b", 2], [1, 8, 0.5, 0.5], [2, 8, 1, 0.5, "b", 2], [1, 8, 1.5, 0.5], [1, 5, 2, 2, "v"],
+                 [3, 7, 4, 0.5], [3, 5, 4.5, 0.5], [4, 7, 5, 0.5], [4, 5, 5.5, 0.5], [5, 7, 6, 0.5], [6, 8, 6.5, 0.5], [6, 5, 7, 1] ] }
+  ]
+}

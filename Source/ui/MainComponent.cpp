@@ -4,7 +4,7 @@ using namespace theory;
 
 // ---------------------------------------------------------------- home
 
-HomePage::HomePage (Progress& p, const std::vector<Lesson>& l) : progress (p), lessons (l)
+HomePage::HomePage (Progress& p, const std::vector<Lesson>& l, const std::vector<Lesson>& b) : progress (p), lessons (l), bluesLessons (b), licks (loadLicks())
 {
     addAndMakeVisible (continueButton);
     addAndMakeVisible (practiceButton);
@@ -75,38 +75,59 @@ void HomePage::paint (juce::Graphics& g)
     drawHeading (g, "Your progress", inner.removeFromTop (34), 21.0f);
     static const char* levelNames[] = { "", "Level 1: Foundations", "Level 2: Position player", "Level 3: Harmony", "Level 4: Pre-Gleason" };
     int lastLevel = -1;
-    const int rowH = juce::jlimit (24, 34, (inner.getHeight() - 110) / juce::jmax (1, (int) lessons.size() + 2));
+    const int rowH = juce::jlimit (22, 32, (inner.getHeight() - 110) / juce::jmax (1, (int) lessons.size() + 6));
+    auto barRow = [&] (const juce::String& title, int done, int total)
+    {
+        auto row = inner.removeFromTop (rowH);
+        total = juce::jmax (1, total);
+        g.setColour (Palette::text);
+        g.setFont (Fonts::ui (15.0f));
+        g.drawText (title, row.removeFromLeft (row.getWidth() * 3 / 5), juce::Justification::centredLeft);
+        g.setColour (Palette::dim);
+        g.setFont (Fonts::ui (13.0f));
+        g.drawText (juce::String (done) + "/" + juce::String (total), row.removeFromRight (40), juce::Justification::centredRight);
+        auto bar = row.reduced (6, 0).withSizeKeepingCentre (row.getWidth() - 12, 10).toFloat();
+        g.setColour (Palette::panelLight);
+        g.fillRoundedRectangle (bar, 4.0f);
+        g.setColour (done >= total ? Palette::green : Palette::gold);
+        g.fillRoundedRectangle (bar.withWidth (bar.getWidth() * (float) done / (float) total), 4.0f);
+    };
+    auto heading = [&] (const juce::String& text)
+    {
+        g.setColour (Palette::gold.withAlpha (0.85f));
+        g.setFont (Fonts::ui (15.0f, true));
+        g.drawText (text, inner.removeFromTop (rowH), juce::Justification::bottomLeft);
+    };
+    auto passedIn = [&] (const Lesson& l)
+    {
+        int passed = 0;
+        for (int x = 0; x < (int) l.exercises.size(); ++x)
+            passed += progress.passed (l.exerciseKey (x)) ? 1 : 0;
+        return passed;
+    };
     for (auto& l : lessons)
     {
         if (l.level != lastLevel)
         {
             lastLevel = l.level;
-            g.setColour (Palette::gold.withAlpha (0.85f));
-            g.setFont (Fonts::ui (15.0f, true));
-            g.drawText (levelNames[juce::jlimit (0, 4, l.level)], inner.removeFromTop (rowH), juce::Justification::bottomLeft);
+            heading (levelNames[juce::jlimit (0, 4, l.level)]);
         }
-        int passed = 0;
-        for (int x = 0; x < (int) l.exercises.size(); ++x)
-            passed += progress.passed (l.exerciseKey (x)) ? 1 : 0;
-        auto row = inner.removeFromTop (rowH);
-        const int total = juce::jmax (1, (int) l.exercises.size());
-        g.setColour (Palette::text);
-        g.setFont (Fonts::ui (15.0f));
-        g.drawText (l.title, row.removeFromLeft (row.getWidth() * 3 / 5), juce::Justification::centredLeft);
-        g.setColour (Palette::dim);
-        g.setFont (Fonts::ui (13.0f));
-        g.drawText (juce::String (passed) + "/" + juce::String (total), row.removeFromRight (40), juce::Justification::centredRight);
-        auto bar = row.reduced (6, 0).withSizeKeepingCentre (row.getWidth() - 12, 10).toFloat();
-        g.setColour (Palette::panelLight);
-        g.fillRoundedRectangle (bar, 4.0f);
-        g.setColour (passed == total ? Palette::green : Palette::gold);
-        g.fillRoundedRectangle (bar.withWidth (bar.getWidth() * (float) passed / (float) total), 4.0f);
+        barRow (l.title, passedIn (l), (int) l.exercises.size());
     }
+    heading ("Blues track");
+    int lessonsDone = 0;
+    for (auto& l : bluesLessons)
+        lessonsDone += passedIn (l) == (int) l.exercises.size() ? 1 : 0;
+    barRow ("Blues lessons finished", lessonsDone, (int) bluesLessons.size());
+    int learned = 0;
+    for (auto& lk : licks)
+        learned += progress.bestScore ("lick/" + lk.id) >= Progress::passMark ? 1 : 0;
+    barRow ("Licks learned", learned, (int) licks.size());
     inner.removeFromTop (10);
     drawHeading (g, "Coming next", inner.removeFromTop (28), 18.0f);
     g.setColour (Palette::dim);
     g.setFont (Fonts::ui (15.0f));
-    g.drawFittedText ("Milestone 3: the blues track, with backing tracks made in the app, the minor pentatonic and blues scales, and a lick library you play along with.",
+    g.drawFittedText ("Milestone 4: seventh chords and the chords of every key, Roman numerals and progressions, chord-quality ear training, and rhythm reading with tapping.",
                       inner.removeFromTop (60), juce::Justification::topLeft, 3);
 }
 
@@ -118,81 +139,6 @@ void HomePage::resized()
     continueButton.setBounds (row.removeFromLeft (520));
     row.removeFromLeft (12);
     practiceButton.setBounds (row.removeFromLeft (180));
-}
-
-// ---------------------------------------------------------------- improvisation
-
-ImprovPage::ImprovPage()
-{
-    for (int pc : { 4, 9, 7, 2, 0, 5, 10 })
-        key.addItem ("Key of " + pcName (pc, pc == 5 || pc == 10), pc + 1);
-    key.setSelectedId (5, juce::dontSendNotification);
-    key.onChange = [this] { repaint(); };
-    quickChange.onClick = [this] { repaint(); };
-    addAndMakeVisible (key);
-    addAndMakeVisible (quickChange);
-
-    text.setLines ({
-        "## The blues track",
-        "Improvisation starts with the 12-bar blues, as it does at Berklee and in Gleason's book. The chart on the left is the form every blues player knows: three chords, I, IV and V, all played as dominant 7th chords. Count the bars out loud while a song plays until you always know where bar 1 is.",
-        "## Think in numbers",
-        "The chart shows Roman numerals as well as chord names. Gleason's book thinks in numbers all the way through, so a lick learned in E can be moved to A by moving its numbers. Change the key above and watch the numbers stay the same.",
-        "## Coming in milestone 3",
-        "- Backing tracks made in the app: shuffle, straight, slow and funk feels, any key and tempo",
-        "- Minor pentatonic and blues scales in five shapes, then major pentatonic and Mixolydian",
-        "- A lick library in notation, tab and on the neck, scored by pitch detection as you play along",
-        "- Call and response, bends, slides and vibrato, and targeting chord tones on the changes",
-        "## Getting ready for Gleason's book",
-        "Before the book, the app makes sure you can: name any fret, read single-note lines in position, play the five octave shapes, count and play rhythmic words, build triads and seventh chords, and know the chords of every key by number." });
-    addAndMakeVisible (text);
-}
-
-void ImprovPage::paint (juce::Graphics& g)
-{
-    auto r = getLocalBounds().reduced (24, 16);
-    auto left = r.removeFromLeft (r.getWidth() / 2);
-    drawPanel (g, left.toFloat());
-    auto inner = left.reduced (20, 14);
-    drawHeading (g, "12-bar blues", inner.removeFromTop (34), 22.0f);
-    inner.removeFromTop (46);
-
-    const int rootPc = key.getSelectedId() - 1;
-    const bool flats = rootPc == 5 || rootPc == 10 || rootPc == 0;
-    static const int normal[12] = { 1, 1, 1, 1, 4, 4, 1, 1, 5, 4, 1, 5 };
-    static const int quick[12]  = { 1, 4, 1, 1, 4, 4, 1, 1, 5, 4, 1, 5 };
-    const int* form = quickChange.getToggleState() ? quick : normal;
-
-    const int cellW = inner.getWidth() / 4, cellH = 92;
-    for (int bar = 0; bar < 12; ++bar)
-    {
-        auto cell = juce::Rectangle<int> (inner.getX() + (bar % 4) * cellW, inner.getY() + (bar / 4) * (cellH + 10), cellW, cellH).reduced (4);
-        const int degree = form[bar];
-        const int pc = mod12 (rootPc + (degree == 1 ? 0 : degree == 4 ? 5 : 7));
-        g.setColour (degree == 1 ? Palette::panelLight : degree == 4 ? Palette::line : Palette::rosewood.brighter (0.3f));
-        g.fillRoundedRectangle (cell.toFloat(), 6.0f);
-        g.setColour (Palette::dim);
-        g.setFont (Fonts::ui (13.0f));
-        g.drawText ("bar " + juce::String (bar + 1), cell.reduced (8, 4), juce::Justification::topLeft);
-        g.setColour (Palette::text);
-        g.setFont (Fonts::ui (26.0f, true));
-        g.drawText (pcName (pc, flats) + "7", cell.translated (0, 4), juce::Justification::centred);
-        g.setColour (Palette::gold);
-        g.setFont (Fonts::ui (16.0f, true));
-        g.drawText (degree == 1 ? "I7" : degree == 4 ? "IV7" : "V7", cell.reduced (8, 6), juce::Justification::bottomRight);
-    }
-}
-
-void ImprovPage::resized()
-{
-    auto r = getLocalBounds().reduced (24, 16);
-    auto left = r.removeFromLeft (r.getWidth() / 2).reduced (20, 14);
-    left.removeFromTop (38);
-    auto row = left.removeFromTop (34);
-    key.setBounds (row.removeFromLeft (150).reduced (2));
-    row.removeFromLeft (12);
-    quickChange.setBounds (row.removeFromLeft (260));
-    r.removeFromLeft (24);
-    text.setBounds (r.withHeight (text.heightForWidth (r.getWidth())));
 }
 
 // ---------------------------------------------------------------- audio
@@ -291,8 +237,10 @@ void AudioPage::resized()
 // ---------------------------------------------------------------- main
 
 MainComponent::MainComponent (AudioEngine& e, Progress& p)
-    : engine (e), progress (p), lessons (loadLessons()),
-      homePage (p, lessons), theoryPage (e, p, lessons), practicePage (e, p), audioPage (e)
+    : engine (e), progress (p), allLessons (loadLessons()),
+      lessons ([this] { std::vector<Lesson> v; for (auto& l : allLessons) if (l.track != "blues") v.push_back (l); return v; }()),
+      bluesLessons ([this] { std::vector<Lesson> v; for (auto& l : allLessons) if (l.track == "blues") v.push_back (l); return v; }()),
+      homePage (p, lessons, bluesLessons), theoryPage (e, p, lessons), improvPage (e, p, bluesLessons), practicePage (e, p), audioPage (e)
 {
     setLookAndFeel (&look);
     const char* names[] = { "Home", "Music Theory", "Improvisation", "Practice", "Audio" };
@@ -308,6 +256,7 @@ MainComponent::MainComponent (AudioEngine& e, Progress& p)
     homePage.onContinue = [this] (int lesson) { showPage (theory); theoryPage.openLesson (lesson); };
     homePage.onGoTo = [this] (int page) { showPage (page); };
     theoryPage.onProgressChanged = [this] { homePage.refresh(); };
+    improvPage.onProgressChanged = [this] { homePage.refresh(); };
 
     setSize (1280, 820);
     showPage (home);
@@ -337,6 +286,7 @@ LiveInput* MainComponent::pageInput (int p)
     switch (p)
     {
         case theory:   return &theoryPage;
+        case improv:   return &improvPage;
         case practice: return &practicePage;
         case audio:    return &audioPage;
         default:       return nullptr;

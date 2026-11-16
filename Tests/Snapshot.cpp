@@ -71,6 +71,44 @@ int main (int argc, char** argv)
     save (main, folder, "04-exercise-finished");
 
     main.showPage (MainComponent::improv);    save (main, folder, "05-improv");
+    auto& improv = main.getImprovPage();
+    for (int l = 0; l < 9; ++l)
+    {
+        improv.getLessons().openLesson (l);
+        save (main, folder, "05-blues-lesson" + juce::String (l + 1));
+    }
+    struct BShot { int lesson, exercise; const char* name; };
+    const BShot bshots[] = { { 0, 0, "bluesChart" }, { 0, 1, "bluesNumbers" }, { 0, 2, "spell7" }, { 0, 3, "earBluesChange" }, { 1, 1, "earFeel" },
+                             { 2, 1, "boxDegree" }, { 2, 2, "playPent" }, { 5, 0, "bendTarget" }, { 5, 1, "playBend" }, { 7, 0, "chordTone" } };
+    for (auto& s : bshots)
+    {
+        improv.getLessons().openExercise (s.lesson, s.exercise, 11);
+        engine.stopNotes();
+        engine.getBacking().stop();
+        save (main, folder, juce::String ("05-bex-") + s.name);
+        const juce::String name (s.name);
+        if (name != "playPent" && name != "playBend" && name != "spell7")
+        {
+            improv.getLessons().getExerciseView().simulateChoice (true);
+            save (main, folder, "05-bex-" + name + "-answered");
+        }
+    }
+    improv.getLessons().openLesson (0);
+    improv.showTab (ImprovPage::backingTab);
+    save (main, folder, "05-backing");
+    improv.getBacking().showBar (4);
+    save (main, folder, "05-backing-bar5");
+    improv.showTab (ImprovPage::licksTab);
+    for (int l : { 0, 4, 8, 12 })
+    {
+        improv.getLicks().selectLick (l);
+        save (main, folder, "05-lick" + juce::String (l + 1));
+    }
+    improv.getLicks().selectLick (1);
+    improv.getLicks().startTurn();
+    save (main, folder, "05-lick-turn");
+    improv.getLicks().simulateTurn (0);
+    save (main, folder, "05-lick-scored");
     main.showPage (MainComponent::practice);  save (main, folder, "06-practice");
     main.getPracticePage().getExplorer().startDrill (3);
     save (main, folder, "06-practice-drill");

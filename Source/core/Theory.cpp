@@ -230,13 +230,14 @@ namespace theory
     const std::vector<ScaleType>& scaleTypes()
     {
         static const std::vector<ScaleType> list {
-            { "major",           "Major",             ivs ({ "P1", "M2", "M3", "P4", "P5", "M6", "M7" }) },
-            { "naturalMinor",    "Natural minor",     ivs ({ "P1", "M2", "m3", "P4", "P5", "m6", "m7" }) },
-            { "harmonicMinor",   "Harmonic minor",    ivs ({ "P1", "M2", "m3", "P4", "P5", "m6", "M7" }) },
-            { "melodicMinor",    "Melodic minor",     ivs ({ "P1", "M2", "m3", "P4", "P5", "M6", "M7" }) },
-            { "majorPentatonic", "Major pentatonic",  ivs ({ "P1", "M2", "M3", "P5", "M6" }) },
-            { "minorPentatonic", "Minor pentatonic",  ivs ({ "P1", "m3", "P4", "P5", "m7" }) },
-            { "blues",           "Blues",             ivs ({ "P1", "m3", "P4", "d5", "P5", "m7" }) } };
+            { "major",           "Major",             ivs ({ "P1", "M2", "M3", "P4", "P5", "M6", "M7" }), 0 },
+            { "naturalMinor",    "Natural minor",     ivs ({ "P1", "M2", "m3", "P4", "P5", "m6", "m7" }), 3 },
+            { "harmonicMinor",   "Harmonic minor",    ivs ({ "P1", "M2", "m3", "P4", "P5", "m6", "M7" }), 3 },
+            { "melodicMinor",    "Melodic minor",     ivs ({ "P1", "M2", "m3", "P4", "P5", "M6", "M7" }), 3 },
+            { "majorPentatonic", "Major pentatonic",  ivs ({ "P1", "M2", "M3", "P5", "M6" }), 0 },
+            { "minorPentatonic", "Minor pentatonic",  ivs ({ "P1", "m3", "P4", "P5", "m7" }), 3 },
+            { "blues",           "Blues",             ivs ({ "P1", "m3", "P4", "d5", "P5", "m7" }), 3 },
+            { "mixolydian",      "Mixolydian",        ivs ({ "P1", "M2", "M3", "P4", "P5", "M6", "m7" }), 5 } };
         return list;
     }
 
@@ -343,9 +344,23 @@ namespace theory
         return list;
     }
 
+    const std::vector<ChordType>& seventhTypes()
+    {
+        static const std::vector<ChordType> list {
+            { "dominant7",      "dominant 7th",      "7",    ivs ({ "P1", "M3", "P5", "m7" }) },
+            { "major7",         "major 7th",         "maj7", ivs ({ "P1", "M3", "P5", "M7" }) },
+            { "minor7",         "minor 7th",         "m7",   ivs ({ "P1", "m3", "P5", "m7" }) },
+            { "halfDiminished", "half-diminished",   juce::String (juce::CharPointer_UTF8 ("m7\xe2\x99\xad" "5")), ivs ({ "P1", "m3", "d5", "m7" }) },
+            { "diminished7",    "diminished 7th",    juce::String (juce::CharPointer_UTF8 ("\xc2\xb0" "7")), ivs ({ "P1", "m3", "d5", "d7" }) } };
+        return list;
+    }
+
     const ChordType& chordType (const juce::String& id)
     {
         for (auto& t : triadTypes())
+            if (t.id == id)
+                return t;
+        for (auto& t : seventhTypes())
             if (t.id == id)
                 return t;
         return triadTypes().front();

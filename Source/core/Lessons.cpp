@@ -1,6 +1,7 @@
 #include "Lessons.h"
 #include "BinaryData.h"
 #include "Fingerings.h"
+#include "BackingTrack.h"
 
 using namespace theory;
 
@@ -16,6 +17,7 @@ std::vector<Lesson> parseLessons (const juce::String& json)
             lesson.id = l["id"].toString();
             lesson.level = (int) l["level"];
             lesson.strand = l["strand"].toString();
+            lesson.track = l.getProperty ("track", "theory").toString();
             lesson.title = l["title"].toString();
             lesson.summary = l["summary"].toString();
             lesson.diagram = l["diagram"];
@@ -549,7 +551,7 @@ Question makeQuestion (const ExerciseSpec& spec, juce::Random& rng)
             // show the shape with the root on the 6th string
             const auto names = scaleSpelling (root, st);
             for (auto& fg : positionFingerings (root.pc(), st))
-                if (fg.name.startsWith (st.isMinor() ? "G shape" : "E shape"))
+                if (fg.name.startsWith (st.size() < 7 ? "Box 1" : st.parent == 3 ? "G shape" : st.parent == 5 ? "A shape" : "E shape"))
                     for (auto& n : fg.notes)
                         q.revealMarks.push_back ({ n.string, n.fret, names[(size_t) mod12 (n.midi)], n.degree == 0 ? 1 : 0 });
         }
@@ -693,17 +695,17 @@ Question makeQuestion (const ExerciseSpec& spec, juce::Random& rng)
         } while (! plainSpelling (chord));
         const auto name = chordName (root, ct);
         juce::String tones;
-        for (int i = 0; i < 3; ++i)
+        for (int i = 0; i < (int) chord.size(); ++i)
             tones << (i ? ", " : "") << chord[(size_t) i].name() << " (" << chordToneLabel (i, ct) << ")";
         const auto lower = intervalBetween (chord[0], chord[1]), upper = intervalBetween (chord[1], chord[2]);
-        q.explanation = name + " = " + tones + ": a " + lower.longName() + " with a " + upper.longName() + " on top.";
+        q.explanation = name + " = " + tones + (chord.size() == 3 ? ": a " + lower.longName() + " with a " + upper.longName() + " on top." : juce::String ("."));
         q.listenMidi = midis (chord);
         q.listenAsChord = true;
         q.listenGap = 0.5;
 
         if (t == "spellTriad")
         {
-            q.prompt = "Spell " + name + " (" + chordSymbol (root, ct) + "): click the 3rd and the 5th.";
+            q.prompt = "Spell " + name + " (" + chordSymbol (root, ct) + "): click the " + (chord.size() == 4 ? "3rd, 5th and 7th." : "3rd and the 5th.");
             q.sequence = chord;
             q.sequenceGiven = 1;
             q.staffNotes = { root };
@@ -740,7 +742,10 @@ Question makeQuestion (const ExerciseSpec& spec, juce::Random& rng)
             q.expectedMidi = root.midi();
             q.judgePlayed = [pc = root.pc()] (int m) { return mod12 (m) == pc; };
             q.judgeFret = [pc = root.pc()] (int s, int f) { return mod12 (fretMidi (s, f)) == pc; };
-            q.revealMarks = toneMarks (chord, { "R", chordToneLabel (1, ct), chordToneLabel (2, ct) }, 0, 5);
+            juce::StringArray toneLabels;
+            for (int i = 0; i < (int) chord.size(); ++i)
+                toneLabels.add (chordToneLabel (i, ct));
+            q.revealMarks = toneMarks (chord, toneLabels, 0, 5);
         }
         else
         {
@@ -838,6 +843,241 @@ Question makeQuestion (const ExerciseSpec& spec, juce::Random& rng)
         }
     }
 
+    if (t == "bluesChart" || t == "bluesNumbers")
+    {
+        const auto forms = stringList (spec.params["forms"], { "standard" });
+        const auto& form = bluesForm (forms[rng.nextInt (forms.size())]);
+        const auto key = pickRoot (spec, rng, { "E", "A", "G", "C", "D", "Bb", "F" }, 3);
+        const int keyPc = key.pc();
+        // the different chords of the form, in order of appearance
+        std::vector<BluesChord> chords;
+        for (auto& b : form.bars)
+            for (auto& c : b)
+                if (std::find_if (chords.begin(), chords.end(), [&] (auto& x) { return x.offset == c.offset && x.quality == c.quality; }) == chords.end())
+                    chords.push_back (c);
+        auto indexOf = [&] (const BluesChord& c)
+        {
+            return (int) (std::find_if (chords.begin(), chords.end(), [&] (auto& x) { return x.offset == c.offset && x.quality == c.quality; }) - chords.begin());
+        };
+        juce::StringArray chart;
+        for (int i = 0; i < 12; ++i)
+        {
+            juce::StringArray inBar;
+            for (auto& c : form.bars[(size_t) i]) inBar.add (bluesChordName (keyPc, c));
+            chart.add (inBar.joinIntoString (" "));
+        }
+        const auto formText = form.name + " in " + key.name() + ": | " + chart.joinIntoString (" | ") + " |";
+
+        if (t == "bluesChart")
+        {
+            const int barI = rng.nextInt (12);
+            const auto& c = form.bars[(size_t) barI][0];
+            q.prompt = form.name + " in " + key.name() + ": which chord starts bar " + juce::String (barI + 1) + "?";
+            for (auto& x : chords)
+                q.choices.add (bluesChordName (keyPc, x) + "  (" + bluesRoman (x, form.minor) + ")");
+            q.correctChoice = indexOf (c);
+            q.explanation = formText;
+        }
+        else
+        {
+            const auto& c = chords[(size_t) rng.nextInt ((int) chords.size())];
+            if (rng.nextBool())
+            {
+                q.prompt = "In a blues in " + key.name() + ", which chord is the " + bluesRoman (c, form.minor) + "?";
+                for (auto& x : chords)
+                    q.choices.add (bluesChordName (keyPc, x));
+                q.correctChoice = indexOf (c);
+            }
+            else
+            {
+                q.prompt = "In a blues in " + key.name() + ", " + bluesChordName (keyPc, c) + " is which chord?";
+                for (auto& x : chords)
+                    q.choices.add (bluesRoman (x, form.minor));
+                q.correctChoice = indexOf (c);
+            }
+            q.explanation = "Count up the major scale of " + key.name() + ": " + bluesChordName (keyPc, c) + " is the " + bluesRoman (c, form.minor) + ". " + formText;
+        }
+        q.choiceColumns = juce::jmin (4, q.choices.size());
+        return q;
+    }
+
+    if (t == "earBluesChange")
+    {
+        const int keyPc = rng.nextInt (12);
+        const int moves[3] = { 5, 7, 0 };
+        const int which = rng.nextInt (3);
+        auto voicing = [&] (int offset)
+        {
+            const int r = 45 + mod12 (keyPc + offset - 9);   // A2..G#3
+            return std::vector<int> { r - 12 + (r - 12 < 40 ? 12 : 0), r + 4, r + 10, r + 14 };
+        };
+        q.prompt = "Listen: the I chord, then the next chord. Where did it go?";
+        q.listenChords = { voicing (0), voicing (moves[which]) };
+        q.listenGap = 1.3;
+        q.autoListen = true;
+        q.choices = { "Up to the IV", "Up to the V", "Stayed on the I" };
+        q.correctChoice = which;
+        const BluesChord i7 { 0, "7" }, next { moves[which], "7" };
+        q.explanation = juce::String (which == 2 ? "It stayed on " : "It moved from ") + bluesChordName (keyPc, i7)
+                      + (which == 2 ? "." : " to " + bluesChordName (keyPc, next) + (which == 0 ? ": the bass goes up a 4th, a calm, open move." : ": the bass goes up a 5th, a stronger pull that wants to go home."));
+        return q;
+    }
+
+    if (t == "earFeel")
+    {
+        const auto set = intArray (spec.params["feels"], { 0, 1 });
+        const int which = rng.nextInt ((int) set.size());
+        q.prompt = "Listen to the backing band: which feel is it?";
+        q.listenBacking = set[(size_t) which];
+        q.listenBackingKey = rng.nextInt (12);
+        q.listenBackingBpm = set[(size_t) which] == 2 ? 60.0 : 85.0 + rng.nextInt (30);
+        q.autoListen = true;
+        for (int f : set)
+            q.choices.add (feelNames()[f]);
+        q.correctChoice = which;
+        static const char* why[4] = {
+            "Shuffle: each beat splits into a long and a short note (the 1st and 3rd notes of a triplet). Listen to the hi-hat: da-ga da-ga.",
+            "Straight: each beat splits into two equal eighth notes, as in rock and early Chuck Berry.",
+            "Slow blues: four slow beats per bar, each split into three, so you count 12 in a bar (12/8).",
+            "Funk: sixteenth notes on the hi-hat and a busy, syncopated bass." };
+        q.explanation = why[juce::jlimit (0, 3, set[(size_t) which])];
+        return q;
+    }
+
+    if (t == "boxDegree")
+    {
+        const auto& st = scaleType (spec.params.getProperty ("scale", "minorPentatonic").toString());
+        const auto root = pickRoot (spec, rng, { "A", "E", "G", "C", "D" }, 3);
+        const auto boxes = positionFingerings (root.pc(), st);
+        const auto allowed = intArray (spec.params["boxes"], { 0, 1, 2, 3, 4 });
+        const auto& box = boxes[(size_t) juce::jlimit (0, (int) boxes.size() - 1, allowed[(size_t) rng.nextInt ((int) allowed.size())])];
+        const auto& n = box.notes[(size_t) rng.nextInt ((int) box.notes.size())];
+        const auto names = scaleSpelling (root, st);
+        q.prompt = root.name() + " " + st.name.toLowerCase() + ", " + box.name.upToFirstOccurrenceOf (" (", false, false)
+                 + ": which degree is the blue note?";
+        q.showFretboard = true;
+        q.maxFret = juce::jmax (15, box.highFret + 1);
+        juce::StringArray labels;
+        for (int d = 0; d < st.size(); ++d)
+            labels.add (d == 0 ? juce::String ("R") : degreeLabel (st.intervals[(size_t) d]));
+        for (auto& x : box.notes)
+        {
+            const bool target = x.string == n.string && x.fret == n.fret;
+            q.fretMarks.push_back ({ x.string, x.fret, target ? "?" : juce::String(), target ? 4 : (x.degree == 0 ? 1 : 0) });
+            q.revealMarks.push_back ({ x.string, x.fret, labels[x.degree], target ? 2 : (x.degree == 0 ? 1 : 0) });
+        }
+        // the root marks stay gold so the box can be found from them
+        for (auto& m : q.fretMarks)
+            if (m.colour == 1) m.label = "R";
+        q.choices = labels;
+        q.correctChoice = n.degree;
+        q.choiceColumns = labels.size();
+        q.listenMidi = { fretMidi (n.string, n.fret) };
+        q.explanation = "That note is " + names[(size_t) mod12 (n.midi)] + ", the " + labels[n.degree] + " of " + root.name() + ".";
+        return q;
+    }
+
+    if (t == "bendTarget" || t == "playBend")
+    {
+        // a bend on the top three strings of box 1, a half or whole step
+        const auto root = pickRoot (spec, rng, { "A", "E", "G", "C", "D" }, 3);
+        const auto& st = scaleType ("minorPentatonic");
+        const auto boxes = positionFingerings (root.pc(), st);
+        std::vector<FretNote> candidates;
+        for (auto& x : boxes.front().notes)
+            if (x.string <= 3 && x.degree != 0)
+                candidates.push_back (x);
+        const auto n = candidates[(size_t) rng.nextInt ((int) candidates.size())];
+        // the musical bends: b3 up a half step to the 3, 4 up a whole step to the 5, b7 up to the root
+        const juce::String label = degreeLabel (st.intervals[(size_t) n.degree]);
+        const int amount = label == "b3" ? (rng.nextBool() ? 1 : 2) : 2;
+        const int target = n.midi + amount;
+        const auto names = scaleSpelling (root, scaleType ("major"));
+        auto spell = [&] (int midi)
+        {
+            const auto& s = names[(size_t) mod12 (midi)];
+            return s.isNotEmpty() ? s : noteFromMidi (midi, true).name();
+        };
+        const juce::String size = amount == 1 ? "a half step" : "a whole step";
+        const int semis = mod12 (target - root.pc());
+        const juce::String degree = semis == 0 ? "root" : octaveIntervals()[(size_t) semis].longName().replace ("perfect ", "").replace ("major ", "");
+        q.explanation = "Bending " + spell (n.midi) + " " + size + " reaches " + spell (target) + ", the " + degree + " of " + root.name() + ".";
+        q.showFretboard = true;
+        q.maxFret = 15;
+        q.fretMarks = { { n.string, n.fret, spell (n.midi), 4 } };
+        if (t == "bendTarget")
+        {
+            q.prompt = "Key of " + root.name() + ": you bend this note (" + stringName (n.string) + ", fret " + juce::String (n.fret) + ") " + size + ". Which note do you reach?";
+            q.choices = accidentalChoices();
+            q.choices.addIfNotAlreadyThere (spell (target));
+            q.correctChoice = q.choices.indexOf (spell (target));
+            q.choiceColumns = 9;
+            q.listenMidi = { n.midi, target };
+            q.revealMarks = { { n.string, n.fret, spell (n.midi), 0 }, { n.string, n.fret + amount, spell (target), 2 } };
+        }
+        else
+        {
+            q.prompt = "Bend the blue dot (" + spell (n.midi) + ", " + stringName (n.string) + ", fret " + juce::String (n.fret) + ") " + size + " up to " + spell (target)
+                     + ". Hold it there until it turns green.";
+            q.acceptsPlaying = true;
+            q.expectedMidi = target;
+            q.judgePlayed = [target] (int m) { return m == target; };
+            const int start = n.midi;
+            q.ignorePlayed = [start, target] (int m) { return m >= start && m < target; };   // on the way up
+            q.listenMidi = { target };
+            q.listenBeforeAnswer = true;
+            q.revealMarks = { { n.string, n.fret, spell (n.midi), 0 }, { n.string, n.fret + amount, spell (target), 2 } };
+            q.explanation << " Check it: the target is the same pitch as fret " << (n.fret + amount) << " on that string.";
+        }
+        return q;
+    }
+
+    if (t == "chordTone")
+    {
+        const auto forms = stringList (spec.params["forms"], { "standard" });
+        const auto& form = bluesForm (forms[rng.nextInt (forms.size())]);
+        const auto key = pickRoot (spec, rng, { "E", "A", "G", "C", "D", "F" }, 3);
+        std::vector<BluesChord> chords;
+        for (auto& b : form.bars)
+            for (auto& c : b)
+                if (std::find_if (chords.begin(), chords.end(), [&] (auto& x) { return x.offset == c.offset && x.quality == c.quality; }) == chords.end())
+                    chords.push_back (c);
+        const auto& c = chords[(size_t) rng.nextInt ((int) chords.size())];
+        const auto tones = bluesChordTones (c);
+        static const char* toneNames7[4] = { "root", "3rd", "5th", "7th" };
+        auto semisLabel = [] (int s) { return s == 0 ? "R" : s == 3 ? "b3" : s == 4 ? "3" : s == 6 ? "b5" : s == 7 ? "5" : s == 9 ? "bb7" : s == 10 ? "b7" : "7"; };
+        juce::StringArray labels;
+        for (int k = 0; k < 4; ++k)
+            labels.add (semisLabel (tones[(size_t) k]));
+        // spell the chord from its root
+        const auto& ct = chordType (c.quality == "m7" ? "minor7" : c.quality == "dim7" ? "diminished7" : "dominant7");
+        const auto notes = chordNotes (bluesChordRoot (key.pc(), c), ct);
+        const int i = 1 + rng.nextInt (3);
+        const auto name = bluesChordName (key.pc(), c);
+        q.explanation = name + " = " + noteList (notes) + " (R " + labels[1] + " " + labels[2] + " " + labels[3] + "). Over the " + bluesRoman (c, form.minor)
+                      + " chord, aim for its 3rd and 7th: they are the notes that change from chord to chord.";
+        if (rng.nextBool())
+        {
+            q.prompt = "Blues in " + key.name() + ", over " + name + " (the " + bluesRoman (c, form.minor) + "): which note is the " + toneNames7[i] + "?";
+            q.choices = accidentalChoices();
+            for (auto& n : notes) q.choices.addIfNotAlreadyThere (n.name());
+            q.correctChoice = q.choices.indexOf (notes[(size_t) i].name());
+            q.choiceColumns = 9;
+        }
+        else
+        {
+            q.prompt = "Blues in " + key.name() + ": over " + name + ", what is " + notes[(size_t) i].name() + "?";
+            for (int k = 0; k < 4; ++k)
+                q.choices.add (juce::String (toneNames7[k]) + " (" + labels[k] + ")");
+            q.correctChoice = i;
+            q.choiceColumns = 4;
+        }
+        q.listenMidi = midis (notes);
+        q.listenAsChord = true;
+        q.listenGap = 0.35;
+        return q;
+    }
+
     q.prompt = "Unknown exercise type: " + t;
     return q;
 }
@@ -859,7 +1099,8 @@ juce::String describeExerciseInput (const ExerciseSpec& spec)
     const auto& t = spec.type;
     if (t == "playStaff" || t == "playInterval" || t == "findFret" || t == "playScale" || t == "playTriad") return "play or click";
     if (t == "nameStaff") return "click or play";
-    if (t == "earInterval" || t == "earScale" || t == "earTriad") return "listen";
+    if (t == "earInterval" || t == "earScale" || t == "earTriad" || t == "earBluesChange" || t == "earFeel") return "listen";
+    if (t == "playBend") return "play";
     if (t == "writeStaff" || t == "writeScale") return "write";
     return "click";
 }
