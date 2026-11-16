@@ -79,6 +79,7 @@ public:
     void startRun();
     void simulateRun (int hits, int mistakes, double bpm);
     void select (int rootPc, const juce::String& scaleId, int fingeringIndex, int patternIndex);
+    void selectDrill (int drill);
 
 private:
     AudioEngine& engine;

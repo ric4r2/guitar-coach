@@ -4,12 +4,53 @@ using namespace theory;
 
 // ---------------------------------------------------------------- home
 
+void PlanRow::paint (juce::Graphics& g)
+{
+    auto r = getLocalBounds().toFloat().reduced (0, 3);
+    g.setColour (isMouseOver() ? Palette::panelLight.brighter (0.08f) : Palette::panelLight);
+    g.fillRoundedRectangle (r, 8.0f);
+    auto inner = r.reduced (12, 6);
+    g.setColour (Palette::gold);
+    g.setFont (Fonts::ui (15.0f, true));
+    g.drawText (juce::String (item.minutes) + " min", inner.removeFromLeft (58), juce::Justification::centredLeft);
+
+    auto mark = inner.removeFromRight (70);
+    if (done)
+    {
+        const auto c = mark.withSizeKeepingCentre (26, 26);
+        g.setColour (Palette::green);
+        g.fillEllipse (c);
+        g.setColour (Palette::ink);
+        g.setFont (Fonts::ui (17.0f, true));
+        g.drawText (juce::String (juce::CharPointer_UTF8 ("\xe2\x9c\x93")), c, juce::Justification::centred);
+    }
+    else
+    {
+        g.setColour (Palette::blue);
+        g.setFont (Fonts::ui (15.0f, true));
+        g.drawText (juce::String (juce::CharPointer_UTF8 ("Start \xe2\x80\xba")), mark, juce::Justification::centredRight);
+    }
+    g.setColour (done ? Palette::dim : Palette::text);
+    g.setFont (Fonts::ui (16.0f, true));
+    g.drawText (item.title, inner.removeFromTop (inner.getHeight() * 0.48f), juce::Justification::bottomLeft);
+    g.setColour (Palette::dim);
+    g.setFont (Fonts::ui (13.5f));
+    g.drawFittedText (item.detail, inner.toNearestInt(), juce::Justification::topLeft, 2, 1.0f);
+}
+
 HomePage::HomePage (Progress& p, const std::vector<Lesson>& l, const std::vector<Lesson>& b) : progress (p), lessons (l), bluesLessons (b), licks (loadLicks())
 {
     addAndMakeVisible (continueButton);
     addAndMakeVisible (practiceButton);
     continueButton.onClick = [this] { if (onContinue) onContinue (nextLesson); };
     practiceButton.onClick = [this] { if (onGoTo) onGoTo (3); };
+    length.addItem ("30 min", 30);
+    length.addItem ("45 min", 45);
+    length.addItem ("60 min", 60);
+    length.setSelectedId ((int) progress.setting ("sessionMinutes", 45), juce::dontSendNotification);
+    if (length.getSelectedId() == 0) length.setSelectedId (45, juce::dontSendNotification);
+    length.onChange = [this] { progress.setSetting ("sessionMinutes", length.getSelectedId()); refresh(); };
+    addAndMakeVisible (length);
     refresh();
 }
 
@@ -21,6 +62,19 @@ void HomePage::refresh()
         for (int x = 0; x < (int) lessons[(size_t) i].exercises.size(); ++x)
             if (! progress.passed (lessons[(size_t) i].exerciseKey (x))) { nextLesson = i; foundOpen = true; break; }
     continueButton.setButtonText ("Continue: " + lessons[(size_t) nextLesson].title);
+
+    const PlanContext ctx { lessons, bluesLessons, licks };
+    plan = todaysPlan (ctx, progress, juce::jmax (30, length.getSelectedId()));
+    rows.clear();
+    for (auto& item : plan)
+    {
+        auto* row = rows.add (new PlanRow());
+        row->item = item;
+        row->done = isDone (item, progress);
+        row->onClick = [this, item] { if (onPlanItem) onPlanItem (item); };
+        addAndMakeVisible (row);
+    }
+    resized();
     repaint();
 }
 
@@ -33,8 +87,11 @@ void HomePage::paint (juce::Graphics& g)
     g.setColour (Palette::dim);
     g.setFont (Fonts::ui (17.0f));
     const int streak = progress.streakDays();
-    g.drawText ("Streak: " + juce::String (streak) + (streak == 1 ? " day" : " days") + juce::String::fromUTF8 ("   ·   exercises done: ") + juce::String (progress.totalExercisesDone())
-                + juce::String::fromUTF8 ("   ·   goal: ready for Gleason's Guitar Improv in 12 to 18 months"),
+    const int due = progress.dueKeys().size();
+    const int todayMinutes = juce::roundToInt (progress.day (progress.today()).seconds / 60.0);
+    g.drawText ("Streak: " + juce::String (streak) + (streak == 1 ? " day" : " days") + juce::String::fromUTF8 ("   \xc2\xb7   practised today: ") + juce::String (todayMinutes)
+                + " min" + juce::String::fromUTF8 ("   \xc2\xb7   reviews due: ") + juce::String (due)
+                + juce::String::fromUTF8 ("   \xc2\xb7   goal: ready for Gleason's Guitar Improv in 12 to 18 months"),
                 r.removeFromTop (28), juce::Justification::centredLeft);
     r.removeFromTop (70);   // continue button row
 
@@ -46,28 +103,20 @@ void HomePage::paint (juce::Graphics& g)
     // today's session
     drawPanel (g, left.toFloat());
     auto inner = left.reduced (20, 14);
-    drawHeading (g, "Today's session (45 min)", inner.removeFromTop (34), 21.0f);
-    struct Item { const char* mins; const char* what; };
-    const Item items[] = {
-        { "5 min",  "Warm-up: Practice > Technique, chromatic or spider drill with the tempo ladder. It adds 5 BPM after each clean run." },
-        { "10 min", "Theory: read the next lesson and pass one exercise." },
-        { "10 min", "Scales: Practice > Scales, the scale of the current lesson in one shape, up and down, with the metronome." },
-        { "15 min", "Ears and fretboard: one ear-training exercise, then the note finder or interval shapes." },
-        { "5 min",  "Review: redo one exercise you passed earlier this week." } };
-    for (auto& it : items)
-    {
-        auto row = inner.removeFromTop (64);
-        g.setColour (Palette::gold);
-        g.setFont (Fonts::ui (17.0f, true));
-        g.drawText (it.mins, row.removeFromLeft (70), juce::Justification::topLeft);
-        g.setColour (Palette::text);
-        g.setFont (Fonts::ui (16.0f));
-        g.drawFittedText (it.what, row, juce::Justification::topLeft, 3, 1.0f);
-    }
+    int doneCount = 0, total = 0;
+    for (auto* row : rows) { doneCount += row->done ? 1 : 0; total += row->item.minutes; }
+    auto head = inner.removeFromTop (34);
+    drawHeading (g, "Today's session", head, 21.0f);
+    g.setColour (doneCount == rows.size() && rows.size() > 0 ? Palette::green : Palette::dim);
+    g.setFont (Fonts::ui (15.0f));
+    g.drawText (juce::String (doneCount) + " of " + juce::String (rows.size()) + " done" + juce::String::fromUTF8 ("  \xc2\xb7  about ") + juce::String (total) + " min",
+                head.withTrimmedLeft (170).withTrimmedRight (110), juce::Justification::centredLeft);
     g.setColour (Palette::dim);
     g.setFont (Fonts::ui (14.0f));
-    g.drawFittedText ("Practise in short cycles: repeat until you tire, rest about half as long, repeat. Little and often beats long and rare.",
-                      inner.removeFromTop (44), juce::Justification::topLeft, 2);
+    g.drawFittedText (doneCount == rows.size() && rows.size() > 0
+                          ? "All done for today. Rest is part of practice: come back tomorrow, and reviews will be waiting when they are due."
+                          : "Work down the list. Reviews come back on a schedule: 1, 3, 7, 14, 30 and 60 days after you pass, sooner if you slip.",
+                      left.reduced (20, 14).removeFromBottom (40), juce::Justification::topLeft, 2, 1.0f);
 
     // progress, level by level
     drawPanel (g, right.toFloat());
@@ -108,15 +157,15 @@ void HomePage::paint (juce::Graphics& g)
     heading ("Music Theory: lessons finished");
     for (int level = 1; level <= 4; ++level)
     {
-        int total = 0, finished = 0;
+        int inLevel = 0, finished = 0;
         for (auto& l : lessons)
             if (l.level == level)
             {
-                ++total;
+                ++inLevel;
                 finished += passedIn (l) == (int) l.exercises.size() ? 1 : 0;
             }
-        if (total > 0)
-            barRow (levelNames[level], finished, total);
+        if (inLevel > 0)
+            barRow (levelNames[level], finished, inLevel);
         lastLevel = level;
     }
     heading ("Blues track");
@@ -135,10 +184,10 @@ void HomePage::paint (juce::Graphics& g)
             barRow ("Readiness quizzes passed", passedIn (l), (int) l.exercises.size());
         }
     inner.removeFromTop (10);
-    drawHeading (g, "Coming next", inner.removeFromTop (28), 18.0f);
+    drawHeading (g, "The road ahead", inner.removeFromTop (28), 18.0f);
     g.setColour (Palette::dim);
     g.setFont (Fonts::ui (15.0f));
-    g.drawFittedText ("Milestone 6: a daily session planner that picks today's exercises, spaced repetition of what you passed, and practice statistics.",
+    g.drawFittedText ("Work through the four levels and the blues track, a session a day. When all four readiness quizzes pass, start Part 1 of Gleason's book and keep using the backing tracks, metronome and scale shapes next to it.",
                       inner.removeFromTop (60), juce::Justification::topLeft, 3);
 }
 
@@ -150,6 +199,15 @@ void HomePage::resized()
     continueButton.setBounds (row.removeFromLeft (520));
     row.removeFromLeft (12);
     practiceButton.setBounds (row.removeFromLeft (180));
+    r.removeFromTop (22);
+
+    auto left = r.removeFromLeft (r.getWidth() / 2 - 12).reduced (20, 14);
+    length.setBounds (left.removeFromTop (34).removeFromRight (100).reduced (0, 4));
+    left.removeFromTop (6);
+    left.removeFromBottom (46);
+    const int rowH = juce::jlimit (48, 70, left.getHeight() / juce::jmax (1, rows.size()));
+    for (auto* pr : rows)
+        pr->setBounds (left.removeFromTop (rowH));
 }
 
 // ---------------------------------------------------------------- audio
@@ -251,10 +309,11 @@ MainComponent::MainComponent (AudioEngine& e, Progress& p)
     : engine (e), progress (p), allLessons (loadLessons()),
       lessons ([this] { std::vector<Lesson> v; for (auto& l : allLessons) if (l.track != "blues") v.push_back (l); return v; }()),
       bluesLessons ([this] { std::vector<Lesson> v; for (auto& l : allLessons) if (l.track == "blues") v.push_back (l); return v; }()),
-      homePage (p, lessons, bluesLessons), theoryPage (e, p, lessons), improvPage (e, p, bluesLessons), practicePage (e, p), audioPage (e)
+      homePage (p, lessons, bluesLessons), theoryPage (e, p, lessons), improvPage (e, p, bluesLessons), practicePage (e, p),
+      statsPage (p, lessons, bluesLessons), audioPage (e), licks (loadLicks())
 {
     setLookAndFeel (&look);
-    const char* names[] = { "Home", "Music Theory", "Improvisation", "Practice", "Audio" };
+    const char* names[] = { "Home", "Music Theory", "Improvisation", "Practice", "Progress", "Audio" };
     for (int i = 0; i < numPages; ++i)
     {
         auto* b = tabs.add (new juce::TextButton (names[i]));
@@ -266,6 +325,7 @@ MainComponent::MainComponent (AudioEngine& e, Progress& p)
     }
     homePage.onContinue = [this] (int lesson) { showPage (theory); theoryPage.openLesson (lesson); };
     homePage.onGoTo = [this] (int page) { showPage (page); };
+    homePage.onPlanItem = [this] (const PlanItem& item) { openPlanItem (item); };
     theoryPage.onProgressChanged = [this] { homePage.refresh(); };
     improvPage.onProgressChanged = [this] { homePage.refresh(); };
 
@@ -288,6 +348,7 @@ juce::Component* MainComponent::pageComponent (int p)
         case theory:   return &theoryPage;
         case improv:   return &improvPage;
         case practice: return &practicePage;
+        case stats:    return &statsPage;
         default:       return &audioPage;
     }
 }
@@ -314,22 +375,89 @@ void MainComponent::showPage (int p)
     }
     if (p == home)
         homePage.refresh();
+    if (p == stats)
+        statsPage.refresh();
     resized();
     repaint();
+}
+
+void MainComponent::openPlanItem (const PlanItem& item)
+{
+    const PlanContext ctx { lessons, bluesLessons, licks };
+    switch (item.kind)
+    {
+        case PlanItem::Kind::warmup:
+            showPage (practice);
+            practicePage.showTab (PracticePage::techniqueTab);
+            practicePage.getTechnique().selectDrill (item.drill);
+            break;
+        case PlanItem::Kind::scales:
+            showPage (practice);
+            practicePage.showTab (PracticePage::scalesTab);
+            practicePage.getScales().select (item.rootPc, item.scaleId, 0, 1);
+            break;
+        case PlanItem::Kind::improv:
+            showPage (improv);
+            improvPage.showTab (ImprovPage::licksTab);
+            improvPage.getLicks().selectLickById (item.lickId);
+            break;
+        default:
+        {
+            bool blues = false;
+            int index = 0;
+            if (findLesson (ctx, item.lessonId, &blues, &index) == nullptr)
+                break;
+            if (blues)
+            {
+                showPage (improv);
+                improvPage.showTab (ImprovPage::lessonsTab);
+                improvPage.getLessons().openExercise (index, item.exercise);
+            }
+            else
+            {
+                showPage (theory);
+                theoryPage.openExercise (index, item.exercise);
+            }
+            break;
+        }
+    }
 }
 
 void MainComponent::timerCallback()
 {
     auto* input = pageInput (current);
+    const double now = juce::Time::getMillisecondCounterHiRes() / 1000.0;
     NoteEvent e;
     while (engine.popNote (e))
+    {
+        lastActivity = now;
         if (input != nullptr)
             input->notePlayed (e);
+    }
 
     double onset = 0.0;
     while (engine.popOnset (onset))
+    {
+        lastActivity = now;
         if (input != nullptr)
             input->onsetDetected (onset);
+    }
+
+    // practice time: the window is showing and something was played or clicked in the last minute
+    const auto lastClick = juce::Desktop::getInstance().getMainMouseSource().getLastMouseDownTime();
+    if (lastClick.toMilliseconds() > 0 && (juce::Time::getCurrentTime() - lastClick).inSeconds() < 60.0 && hasKeyboardFocus (true))
+        lastActivity = juce::jmax (lastActivity, now - (juce::Time::getCurrentTime() - lastClick).inSeconds());
+    const double dt = juce::jlimit (0.0, 1.0, now - lastTick);
+    lastTick = now;
+    if (isShowing() && now - lastActivity < 60.0)
+    {
+        unsentSeconds += dt;
+        if (unsentSeconds >= 5.0)
+        {
+            progress.addPracticeSeconds (unsentSeconds);
+            unsentSeconds = 0.0;
+        }
+    }
 
     const auto f = engine.getPitch();
     if (input != nullptr)
@@ -369,8 +497,9 @@ void MainComponent::resized()
     auto header = r.removeFromTop (56);
     header.removeFromLeft (210);
     header.removeFromRight (230);
+    const int tabW = juce::jmin (150, header.getWidth() / juce::jmax (1, tabs.size()));
     for (auto* t : tabs)
-        t->setBounds (header.removeFromLeft (150).reduced (4, 10));
+        t->setBounds (header.removeFromLeft (tabW).reduced (4, 10));
     for (int i = 0; i < numPages; ++i)
         pageComponent (i)->setBounds (r);
 }

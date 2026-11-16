@@ -54,6 +54,7 @@ public:
     void resized() override;
 
     void selectLick (int index);
+    void selectLickById (const juce::String& id);
     void startTurn();
     void simulateTurn (int wrongNotes);   // for the snapshot tool
 

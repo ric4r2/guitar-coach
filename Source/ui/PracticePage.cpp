@@ -426,6 +426,12 @@ void PatternTrainer::select (int rootPc, const juce::String& scaleId, int finger
     rebuildTargets();
 }
 
+void PatternTrainer::selectDrill (int drill)
+{
+    pattern.setSelectedId (juce::jlimit (0, techDrillNames().size() - 1, drill) + 1, juce::dontSendNotification);
+    rebuildTargets();
+}
+
 void PatternTrainer::rebuildFingerings()
 {
     const auto& st = currentScale();
@@ -528,6 +534,8 @@ void PatternTrainer::finishRun (double bpmOverride)
     const bool metro = engine.metronomeOn.load() || bpmOverride > 0;
     const double bpm = bpmOverride > 0 ? bpmOverride : (double) engine.metronomeBpm.load();
     const auto s = scoreRun (times, mistakes, metro ? bpm : 0.0, npb());
+    if (bpmOverride <= 0)
+        progress.recordRun (mode == Mode::scales ? "scale" : "tech");
     const juce::String dot = juce::String::fromUTF8 ("  \xc2\xb7  ");
     result = juce::String (juce::roundToInt (s.accuracy * 100)) + "% right notes (" + juce::String (mistakes) + " wrong"
            + ")" + dot + "timing " + juce::String (juce::roundToInt (s.evenness * 100)) + "% even" + dot + "you played at about "

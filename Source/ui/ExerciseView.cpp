@@ -580,7 +580,10 @@ void ExerciseView::paint (juce::Graphics& g)
         const double best = progress.bestScore (lesson->exerciseKey (exerciseIndex));
         g.setColour (Palette::dim);
         g.setFont (Fonts::ui (16.0f));
-        g.drawText ("Best: " + juce::String (juce::roundToInt (best * 100)) + "%", r.removeFromTop (30), juce::Justification::centred);
+        const auto due = progress.dueDate (lesson->exerciseKey (exerciseIndex));
+        g.drawText ("Best: " + juce::String (juce::roundToInt (best * 100)) + "%"
+                        + (due.isNotEmpty() ? juce::String::fromUTF8 ("   \xc2\xb7   next review ") + (due <= progress.today() ? juce::String ("today") : due) : juce::String()),
+                    r.removeFromTop (30), juce::Justification::centred);
         return;
     }
 

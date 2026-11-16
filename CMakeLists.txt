@@ -25,6 +25,7 @@ set(CORE_SOURCES
     Source/core/BackingTrack.cpp
     Source/core/Licks.cpp
     Source/core/Rhythm.cpp
+    Source/core/Planner.cpp
     Source/core/InputAnalyzer.cpp
     Source/core/Lessons.cpp
     Source/core/Progress.cpp)
@@ -37,6 +38,7 @@ set(UI_SOURCES
     Source/ui/TheoryPage.cpp
     Source/ui/PracticePage.cpp
     Source/ui/ImprovPage.cpp
+    Source/ui/StatsPage.cpp
     Source/ui/MainComponent.cpp)
 
 juce_add_gui_app(GuitarCoach

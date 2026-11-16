@@ -8,6 +8,7 @@
 #include "core/BackingTrack.h"
 #include "core/Licks.h"
 #include "core/Rhythm.h"
+#include "core/Planner.h"
 #include <cstdio>
 #include <set>
 
@@ -764,6 +765,80 @@ static void testLevel4()
         CHECK (intervalFromShort (tn.interval).semitones > 12, "%s is above the octave", tn.label.toRawUTF8());
 }
 
+
+static void testPlanner()
+{
+    auto file = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("guitarcoach-test-plan.json");
+    file.deleteFile();
+    Progress p (file);
+    p.setToday ("2026-11-16");
+    CHECK (Progress::addDays ("2026-11-30", 2) == "2026-12-02" && Progress::daysBetween ("2026-11-16", "2026-12-16") == 30, "date arithmetic");
+
+    // spaced repetition: pass -> box 0, due tomorrow; pass again next day -> box 1, 3 days; fail -> box 0, tomorrow
+    p.recordExercise ("L1-staff/0", 9, 10);
+    CHECK (p.box ("L1-staff/0") == 0 && p.dueDate ("L1-staff/0") == "2026-11-17" && ! p.isDue ("L1-staff/0"), "first pass");
+    p.recordExercise ("L1-staff/0", 10, 10);
+    CHECK (p.box ("L1-staff/0") == 0, "a second pass the same day does not move it up");
+    p.setToday ("2026-11-17");
+    CHECK (p.isDue ("L1-staff/0") && p.dueKeys().contains ("L1-staff/0"), "due the next day");
+    p.recordExercise ("L1-staff/0", 8, 10);
+    CHECK (p.box ("L1-staff/0") == 1 && p.dueDate ("L1-staff/0") == "2026-11-20", "box 1: 3 days");
+    p.setToday ("2026-11-20");
+    p.recordExercise ("L1-staff/0", 5, 10);
+    CHECK (p.box ("L1-staff/0") == 0 && p.dueDate ("L1-staff/0") == "2026-11-21" && p.passed ("L1-staff/0"), "a slip sends it back to box 0");
+    p.recordExercise ("L1-staff/1", 4, 10);
+    CHECK (p.dueDate ("L1-staff/1").isEmpty(), "never passed: not reviewed");
+    const auto d = p.day ("2026-11-20");
+    CHECK (d.exercises == 2 && d.correct == 9 && d.questions == 20, "history of the day");
+    p.addPracticeSeconds (95.0);
+    CHECK (std::abs (p.day ("2026-11-20").seconds - 95.0) < 1e-6 && p.totalPracticeSeconds() >= 95.0, "practice time");
+    p.recordRun ("tech");
+    CHECK (p.day ("2026-11-20").techRuns == 1, "technique run counted");
+
+    // the plan
+    const auto all = loadLessons();
+    std::vector<Lesson> theory, blues;
+    for (auto& l : all) (l.track == "blues" ? blues : theory).push_back (l);
+    const auto licks = loadLicks();
+    const PlanContext ctx { theory, blues, licks };
+
+    Progress fresh (juce::File{});
+    fresh.setToday ("2026-11-16");
+    const auto plan = makePlan (ctx, fresh, 45);
+    juce::StringArray kinds;
+    for (auto& item : plan) kinds.add (juce::String ((int) item.kind));
+    CHECK (plan.size() >= 5 && plan.front().kind == PlanItem::Kind::warmup, "45-minute plan: %s", kinds.joinIntoString (",").toRawUTF8());
+    bool hasNew = false, hasBlues = false, hasLick = false;
+    for (auto& item : plan)
+    {
+        hasNew = hasNew || (item.kind == PlanItem::Kind::lesson && item.lessonId == "L1-staff" && item.exercise == 0);
+        hasBlues = hasBlues || (item.kind == PlanItem::Kind::blues && item.lessonId == "B1-form");
+        hasLick = hasLick || (item.kind == PlanItem::Kind::improv && item.lickId == licks.front().id);
+        CHECK (! isDone (item, fresh) && item.title.isNotEmpty() && item.minutes > 0, "%s: open and complete", item.title.toRawUTF8());
+        const auto back = PlanItem::fromVar (item.toVar());
+        CHECK (back.title == item.title && back.kind == item.kind && back.exercise == item.exercise && back.lickId == item.lickId, "plan item round trip");
+    }
+    CHECK (hasNew && hasBlues && hasLick, "new exercise, blues lesson and lick in the plan");
+    int total30 = 0, total60 = 0;
+    for (auto& item : makePlan (ctx, fresh, 30)) total30 += item.minutes;
+    for (auto& item : makePlan (ctx, fresh, 60)) total60 += item.minutes;
+    CHECK (total30 >= 20 && total30 <= 35 && total60 >= 45 && total60 <= 70, "lengths: %d and %d minutes", total30, total60);
+
+    // reviews show up when due, and the plan is kept for the day
+    p.setToday ("2026-11-21");
+    const auto withReview = todaysPlan (ctx, p, 45);
+    bool review = false;
+    for (auto& item : withReview) review = review || (item.kind == PlanItem::Kind::review && item.lessonId == "L1-staff" && item.exercise == 0);
+    CHECK (review, "a due exercise is reviewed");
+    p.recordExercise ("L1-staff/0", 10, 10);
+    const auto again = todaysPlan (ctx, p, 45);
+    CHECK (again.size() == withReview.size(), "the same plan all day");
+    for (auto& item : again)
+        if (item.kind == PlanItem::Kind::review && item.lessonId == "L1-staff")
+            CHECK (isDone (item, p), "the review is done once practised");
+    file.deleteFile();
+}
+
 static void testProgress()
 {
     auto file = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("guitarcoach-test-progress.json");
@@ -800,6 +875,7 @@ int main()
     std::printf ("harmony\n");   testHarmony();
     std::printf ("rhythm\n");    testRhythm();
     std::printf ("level 4\n");   testLevel4();
+    std::printf ("planner\n");   testPlanner();
     std::printf ("lessons\n");   testLessons();
     std::printf ("pitch\n");     testPitch();
     std::printf ("progress\n");  testProgress();

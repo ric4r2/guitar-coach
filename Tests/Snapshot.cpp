@@ -20,8 +20,20 @@ int main (int argc, char** argv)
     auto progressFile = folder.getChildFile ("snapshot-progress.json");
     progressFile.deleteFile();
     Progress progress (progressFile);
-    progress.recordExercise ("L1-staff/0", 9, 10);
-    progress.recordExercise ("L1-staff/1", 6, 10);
+    // two weeks of sample practice, so Home and Progress have something to show
+    {
+        const auto realToday = progress.today();
+        const int minutes[14] = { 20, 35, 0, 45, 30, 0, 50, 25, 40, 0, 55, 35, 30, 15 };
+        for (int k = 13; k >= 0; --k)
+        {
+            progress.setToday (Progress::addDays (realToday, -k));
+            progress.addPracticeSeconds (minutes[13 - k] * 60.0);
+            if (k == 6) { progress.recordExercise ("L1-staff/0", 9, 10); progress.recordExercise ("L2-neck/0", 8, 10); }
+            if (k == 3) { progress.recordExercise ("L1-staff/1", 6, 10); progress.recordTempo ("tech/1/2", 92.0); progress.recordTempo ("scale/major/2/1", 76.0); }
+            if (k == 1) progress.recordExercise ("L1-staff/2", 5, 10);
+        }
+        progress.setToday ({});
+    }
 
     AudioEngine engine;   // not started: no device is opened
     MainComponent main (engine, progress);
@@ -150,6 +162,8 @@ int main (int argc, char** argv)
     save (main, folder, "06-practice-technique");
     practice.getTechnique().simulateRun (999, 6, 100.0);
     save (main, folder, "06-practice-technique-sloppy");
+    main.showPage (MainComponent::stats);     save (main, folder, "08-progress");
+    main.showPage (MainComponent::home);      save (main, folder, "01-home-plan");
     main.showPage (MainComponent::audio);     save (main, folder, "07-audio");
 
     progressFile.deleteFile();

@@ -322,6 +322,13 @@ void LickPanel::selectLick (int index)
     refreshList();
 }
 
+void LickPanel::selectLickById (const juce::String& id)
+{
+    for (int i = 0; i < (int) licks.size(); ++i)
+        if (licks[(size_t) i].id == id)
+            selectLick (i);
+}
+
 void LickPanel::refreshList()
 {
     for (int i = 0; i < lickButtons.size(); ++i)
