@@ -19,7 +19,7 @@ cmake --build build --config Release --target GuitarCoach GuitarCoachTests Guita
 - Tests: `build/GuitarCoachTests_artefacts/Release/GuitarCoachTests.exe`
 - Screens to PNG: `build/GuitarCoachSnapshot_artefacts/Release/GuitarCoachSnapshot.exe <folder>`
 - Every user path (all exercises answered right, wrong then right and with Show answer; drills, licks, settings, window sizes): `build/GuitarCoachPaths_artefacts/Release/GuitarCoachPaths.exe <folder>`
-- Progress lives in `%APPDATA%GuitarCoachprogress.json`; a copy is kept each day in `backups` (the last 30 days).
+- Progress lives in `%APPDATA%\GuitarCoach\progress.json`; a copy is kept each day in `backups\` (the last 30 days).
 
 JUCE is taken from `../GuitarDrive/build/_deps/juce-src` when present (otherwise downloaded), and ASIO
 is enabled when the Steinberg SDK is at `../_sdk/ASIO-SDK_2.3.4/ASIOSDK` (or pass `-DASIO_SDK_DIR=`).
