@@ -45,6 +45,7 @@ juce_add_gui_app(GuitarCoach
     COMPANY_NAME "Joe Garcia"
     PRODUCT_NAME "GuitarCoach"
     BUNDLE_ID com.joegarcia.guitarcoach
+    ICON_BIG "${CMAKE_CURRENT_SOURCE_DIR}/Resources/icon.png"
     MICROPHONE_PERMISSION_ENABLED TRUE)
 
 target_sources(GuitarCoach PRIVATE Source/Main.cpp ${CORE_SOURCES} ${UI_SOURCES})

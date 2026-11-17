@@ -230,7 +230,26 @@ AudioPage::AudioPage (AudioEngine& e)
     outVolume.setValue (engine.outputVolume.load(), juce::dontSendNotification);
     outVolume.onValueChange = [this] { engine.outputVolume.store ((float) outVolume.getValue()); };
     addAndMakeVisible (outVolume);
+
+    monitorToggle.onClick = [this] { engine.monitorOn.store (monitorToggle.getToggleState()); if (onMonitorChanged) onMonitorChanged(); };
+    monitorVolume.setSliderStyle (juce::Slider::LinearHorizontal);
+    monitorVolume.setTextBoxStyle (juce::Slider::NoTextBox, false, 0, 0);
+    monitorVolume.setRange (0.0, 1.0, 0.01);
+    monitorVolume.onValueChange = [this] { engine.monitorVolume.store ((float) monitorVolume.getValue()); if (onMonitorChanged) onMonitorChanged(); };
+    monitorTone.addItem ("Tone: clean amp", 1);
+    monitorTone.addItem ("Tone: dry (straight from the input)", 2);
+    monitorTone.onChange = [this] { engine.monitorWarm.store (monitorTone.getSelectedId() == 1); if (onMonitorChanged) onMonitorChanged(); };
+    for (juce::Component* c : { (juce::Component*) &monitorToggle, (juce::Component*) &monitorVolume, (juce::Component*) &monitorTone })
+        addAndMakeVisible (c);
+    syncMonitor();
     startTimerHz (30);
+}
+
+void AudioPage::syncMonitor()
+{
+    monitorToggle.setToggleState (engine.monitorOn.load(), juce::dontSendNotification);
+    monitorVolume.setValue (engine.monitorVolume.load(), juce::dontSendNotification);
+    monitorTone.setSelectedId (engine.monitorWarm.load() ? 1 : 2, juce::dontSendNotification);
 }
 
 void AudioPage::timerCallback()
@@ -279,11 +298,14 @@ void AudioPage::paint (juce::Graphics& g)
         g.drawText ("Last note detected: " + noteFromMidi (lastNote.midi).name (true) + " (" + (lastNote.cents >= 0 ? "+" : "") + juce::String (juce::roundToInt (lastNote.cents)) + " cents)",
                     inner.removeFromTop (26), juce::Justification::centred);
 
-    auto bottom = r.reduced (20, 14).removeFromBottom (90);
+    auto bottom = r.reduced (20, 14).removeFromBottom (170);
+    drawHeading (g, "Your guitar in the headphones", bottom.removeFromTop (26), 17.0f);
     g.setColour (Palette::dim);
-    g.drawText ("Output volume", bottom.removeFromTop (22), juce::Justification::centredLeft);
-    g.drawFittedText ("Tip: the Audient ASIO driver gives the lowest delay. 48 kHz and 128 samples work well. The guitar goes into the front instrument input (input 1).",
-                      bottom.withTrimmedTop (50), juce::Justification::topLeft, 2);
+    g.setFont (Fonts::ui (14.0f));
+    bottom.removeFromTop (64);
+    g.drawText ("Output volume (examples, backing tracks, metronome)", bottom.removeFromTop (22), juce::Justification::centredLeft);
+    g.drawFittedText ("Tip: the Audient ASIO driver gives the lowest delay (48 kHz, 128 samples), so what you hear stays in time with your hands. The guitar goes into the front instrument input (input 1).",
+                      bottom.withTrimmedTop (36), juce::Justification::topLeft, 2, 1.0f);
 }
 
 void AudioPage::resized()
@@ -296,8 +318,14 @@ void AudioPage::resized()
     auto inner = r.reduced (20, 14);
     inner.removeFromTop (30 + 40);
     channel.setBounds (inner.removeFromTop (34).removeFromLeft (300));
-    auto bottom = r.reduced (20, 14).removeFromBottom (90);
-    bottom.removeFromTop (22);
+    auto bottom = r.reduced (20, 14).removeFromBottom (170);
+    bottom.removeFromTop (30);
+    auto mon = bottom.removeFromTop (30);
+    monitorToggle.setBounds (mon.removeFromLeft (170));
+    monitorTone.setBounds (mon.removeFromLeft (290).reduced (2));
+    auto mon2 = bottom.removeFromTop (30);
+    monitorVolume.setBounds (mon2.removeFromLeft (mon2.getWidth() - 180));
+    bottom.removeFromTop (4 + 22);
     auto row = bottom.removeFromTop (28);
     outVolume.setBounds (row.removeFromLeft (row.getWidth() - 180));
     testButton.setBounds (row.withTrimmedLeft (12));
@@ -326,6 +354,11 @@ MainComponent::MainComponent (AudioEngine& e, Progress& p)
     homePage.onContinue = [this] (int lesson) { showPage (theory); theoryPage.openLesson (lesson); };
     homePage.onGoTo = [this] (int page) { showPage (page); };
     homePage.onPlanItem = [this] (const PlanItem& item) { openPlanItem (item); };
+    engine.monitorOn.store ((bool) progress.setting ("monitorOn", true));
+    engine.monitorVolume.store ((float) (double) progress.setting ("monitorVolume", 0.7));
+    engine.monitorWarm.store ((bool) progress.setting ("monitorWarm", true));
+    audioPage.syncMonitor();
+    audioPage.onMonitorChanged = [this] { saveMonitor(); repaint (livePill()); };
     theoryPage.onProgressChanged = [this] { homePage.refresh(); };
     improvPage.onProgressChanged = [this] { homePage.refresh(); };
 
@@ -379,6 +412,30 @@ void MainComponent::showPage (int p)
         statsPage.refresh();
     resized();
     repaint();
+}
+
+void MainComponent::saveMonitor()
+{
+    progress.setSetting ("monitorOn", engine.monitorOn.load());
+    progress.setSetting ("monitorVolume", (double) engine.monitorVolume.load());
+    progress.setSetting ("monitorWarm", engine.monitorWarm.load());
+}
+
+juce::Rectangle<int> MainComponent::livePill() const
+{
+    return getLocalBounds().removeFromTop (56).removeFromRight (220).reduced (12, 8);
+}
+
+void MainComponent::mouseDown (const juce::MouseEvent& e)
+{
+    // the guitar pill in the header switches hearing your guitar on and off
+    if (livePill().contains (e.getPosition()))
+    {
+        engine.monitorOn.store (! engine.monitorOn.load());
+        audioPage.syncMonitor();
+        saveMonitor();
+        repaint (livePill());
+    }
 }
 
 void MainComponent::openPlanItem (const PlanItem& item)
@@ -481,14 +538,21 @@ void MainComponent::paint (juce::Graphics& g)
     g.drawText ("GuitarCoach", header.reduced (18, 0).removeFromLeft (190), juce::Justification::centredLeft);
 
     // what the guitar is playing right now
-    auto live = header.removeFromRight (220).reduced (12, 8);
+    auto live = livePill();
+    const bool mon = engine.monitorOn.load();
     g.setColour (Palette::panelLight);
     g.fillRoundedRectangle (live.toFloat(), 8.0f);
+    g.setColour (mon ? Palette::green.withAlpha (0.7f) : Palette::line);
+    g.drawRoundedRectangle (live.toFloat().reduced (0.5f), 8.0f, 1.0f);
+    auto textArea = live.reduced (10, 2);
     g.setColour (lastFrame.valid ? Palette::blue : Palette::dim);
     g.setFont (Fonts::ui (15.0f));
-    g.drawText (lastFrame.valid ? juce::String (juce::CharPointer_UTF8 ("\xe2\x99\xaa  ")) + "Hearing " + noteFromMidi (juce::roundToInt (lastFrame.midi)).name (true)
-                                : juce::String (juce::CharPointer_UTF8 ("\xe2\x99\xaa  ")) + "Guitar input",
-                live, juce::Justification::centred);
+    g.drawText (lastFrame.valid ? juce::String (juce::CharPointer_UTF8 ("\xe2\x99\xaa  ")) + noteFromMidi (juce::roundToInt (lastFrame.midi)).name (true)
+                                : juce::String (juce::CharPointer_UTF8 ("\xe2\x99\xaa  ")) + "Guitar",
+                textArea.removeFromLeft (textArea.getWidth() / 2), juce::Justification::centredLeft);
+    g.setColour (mon ? Palette::green : Palette::dim);
+    g.setFont (Fonts::ui (13.0f));
+    g.drawText (mon ? "monitor on" : "monitor off", textArea, juce::Justification::centredRight);
 }
 
 void MainComponent::resized()

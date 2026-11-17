@@ -4,6 +4,7 @@
 #include "core/GuitarVoice.h"
 #include "core/Metronome.h"
 #include "core/BackingTrack.h"
+#include "core/MonitorTone.h"
 #include <array>
 
 // The audio side of the app: listens to the guitar (pitch and note detection on its own thread),
@@ -44,6 +45,11 @@ public:
 
     std::atomic<float> outputVolume { 0.8f };
 
+    // hearing your own guitar through the app (the input sent to the output)
+    std::atomic<bool> monitorOn { true };
+    std::atomic<float> monitorVolume { 0.7f };   // 0..1
+    std::atomic<bool> monitorWarm { true };      // clean-amp colour instead of dry
+
     // blues backing tracks
     BackingTrack& getBacking() { return backing; }
 
@@ -76,6 +82,8 @@ private:
     int nextVoice = 0;
     Metronome metronome;
     BackingTrack backing;
+    MonitorTone monitorTone;
+    float monitorGain = 0.0f;   // smoothed, audio thread
     double sampleRate = 48000.0;
     std::atomic<bool> prepared { false };
     bool started = false;

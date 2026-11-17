@@ -9,6 +9,7 @@
 #include "core/Licks.h"
 #include "core/Rhythm.h"
 #include "core/Planner.h"
+#include "core/MonitorTone.h"
 #include <cstdio>
 #include <set>
 
@@ -839,6 +840,30 @@ static void testPlanner()
     file.deleteFile();
 }
 
+static void testMonitor()
+{
+    // the clean-amp tone: about the same level as dry for a normal guitar signal, bounded for a loud one
+    for (float amp : { 0.1f, 0.25f, 1.0f })
+    {
+        MonitorTone t;
+        t.prepare (48000.0);
+        double inSq = 0, outSq = 0, peak = 0;
+        bool finite = true;
+        for (int i = 0; i < 48000; ++i)
+        {
+            const float x = amp * (float) std::sin (2 * 3.14159265 * 220.0 * i / 48000.0);
+            const float y = t.process (x, true);
+            finite = finite && std::isfinite (y);
+            if (i > 4800) { inSq += x * x; outSq += y * y; peak = std::max (peak, (double) std::abs (y)); }
+        }
+        const double gainDb = 10.0 * std::log10 (outSq / inSq);
+        CHECK (finite && peak < 1.2 && (amp > 0.5 || std::abs (gainDb) < 4.0), "tone at %.2f: %.1f dB, peak %.2f", amp, gainDb, peak);
+    }
+    MonitorTone d;
+    d.prepare (48000.0);
+    CHECK (d.process (0.3f, false) == 0.3f, "dry is untouched");
+}
+
 static void testProgress()
 {
     auto file = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("guitarcoach-test-progress.json");
@@ -876,6 +901,7 @@ int main()
     std::printf ("rhythm\n");    testRhythm();
     std::printf ("level 4\n");   testLevel4();
     std::printf ("planner\n");   testPlanner();
+    std::printf ("monitor\n");   testMonitor();
     std::printf ("lessons\n");   testLessons();
     std::printf ("pitch\n");     testPitch();
     std::printf ("progress\n");  testProgress();

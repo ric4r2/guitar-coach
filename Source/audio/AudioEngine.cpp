@@ -119,6 +119,8 @@ void AudioEngine::audioDeviceAboutToStart (juce::AudioIODevice* device)
         v.prepare (sampleRate);
     metronome.prepare (sampleRate);
     backing.prepare (sampleRate);
+    monitorTone.prepare (sampleRate);
+    monitorGain = 0.0f;
     numPending = 0;
     prepared.store (true);
 }
@@ -190,6 +192,18 @@ void AudioEngine::audioDeviceIOCallbackWithContext (const float* const* in, int 
 
     const float vol = outputVolume.load() * 0.45f;
     juce::FloatVectorOperations::multiply (mix, vol, numSamples);
+
+    // your guitar, on top of everything else, fading in and out smoothly when switched
+    {
+        const float target = monitorOn.load() ? monitorVolume.load() * monitorVolume.load() * 2.0f : 0.0f;
+        const bool warm = monitorWarm.load();
+        if (target > 0.0f || monitorGain > 1.0e-4f)
+            for (int i = 0; i < numSamples; ++i)
+            {
+                monitorGain += 0.002f * (target - monitorGain);
+                mix[i] += monitorTone.process (monoIn[(size_t) i], warm) * monitorGain;
+            }
+    }
 
     if (numOut >= 1 && out[0] != nullptr)
     {

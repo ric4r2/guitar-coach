@@ -45,6 +45,8 @@ class AudioPage : public juce::Component, public LiveInput, private juce::Timer
 {
 public:
     explicit AudioPage (AudioEngine&);
+    std::function<void()> onMonitorChanged;   // to save the choice
+    void syncMonitor();                       // show the engine's current monitor settings
     void pitchChanged (const PitchFrame& f) override { frame = f; }
     void notePlayed (const NoteEvent& e) override { lastNote = e; lastNoteTime = juce::Time::getMillisecondCounter(); }
     void paint (juce::Graphics&) override;
@@ -54,7 +56,9 @@ private:
     juce::AudioDeviceSelectorComponent selector;
     juce::ComboBox channel;
     juce::TextButton testButton { "Play test notes" };
-    juce::Slider outVolume;
+    juce::Slider outVolume, monitorVolume;
+    juce::ToggleButton monitorToggle { "Hear my guitar" };
+    juce::ComboBox monitorTone;
     PitchFrame frame;
     NoteEvent lastNote;
     juce::uint32 lastNoteTime = 0;
@@ -70,6 +74,7 @@ public:
     MainComponent (AudioEngine&, Progress&);
     ~MainComponent() override;
     void showPage (int page);
+    void mouseDown (const juce::MouseEvent&) override;
     TheoryPage& getTheoryPage() { return theoryPage; }
     PracticePage& getPracticePage() { return practicePage; }
     ImprovPage& getImprovPage() { return improvPage; }
@@ -96,6 +101,8 @@ private:
     std::vector<Lick> licks;
     double lastActivity = -1.0e9, lastTick = 0.0, unsentSeconds = 0.0;
     void openPlanItem (const PlanItem&);
+    void saveMonitor();
+    juce::Rectangle<int> livePill() const;
 
     juce::Component* pageComponent (int p);
     LiveInput* pageInput (int p);
