@@ -42,6 +42,7 @@ private:
 
 class ExerciseView : public juce::Component, public LiveInput, private juce::Timer
 {
+    friend struct PathTester;   // Tests/Paths.cpp drives every screen
 public:
     static constexpr int questionsPerRound = 10;
 
@@ -82,7 +83,7 @@ private:
 
     StaffView staff;
     FretboardView fretboard;
-    juce::TextButton backButton { "< Lesson" }, listenButton { "Listen" }, nextButton { "Next" }, againButton { "Try again" };
+    juce::TextButton backButton { "< Lesson" }, listenButton { "Listen" }, nextButton { "Next" }, againButton { "Try again" }, doneButton { "Done" };
     juce::TextButton flatButton, naturalButton, sharpButton;
     juce::OwnedArray<juce::TextButton> choiceButtons;
     std::vector<FretMark> wrongMarks, enteredMarks;

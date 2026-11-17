@@ -99,4 +99,14 @@ if(GUITARCOACH_BUILD_TESTS)
         GuitarCoachContent
         juce::juce_audio_utils
         juce::juce_recommended_config_flags juce::juce_recommended_warning_flags)
+
+    # GuitarCoachPaths: plays through every screen, exercise and setting, checking behaviour and layout
+    juce_add_console_app(GuitarCoachPaths PRODUCT_NAME "GuitarCoachPaths")
+    target_sources(GuitarCoachPaths PRIVATE Tests/Paths.cpp ${CORE_SOURCES} ${UI_SOURCES})
+    target_include_directories(GuitarCoachPaths PRIVATE Source ${COACH_ASIO_INC})
+    target_compile_definitions(GuitarCoachPaths PRIVATE JUCE_WEB_BROWSER=0 JUCE_USE_CURL=0 ${COACH_ASIO_DEFS})
+    target_link_libraries(GuitarCoachPaths PRIVATE
+        GuitarCoachContent
+        juce::juce_audio_utils
+        juce::juce_recommended_config_flags juce::juce_recommended_warning_flags)
 endif()

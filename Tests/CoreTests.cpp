@@ -270,6 +270,67 @@ static void testPitch()
         CHECK (ev.size() == 3, "three plucks of D3 give %d events at %s", (int) ev.size(), times.toRawUTF8());
     }
 
+    // note gate: lifting a finger off a loud fretted note leaves a quiet open string ringing; that is not a new note.
+    // A softer note that is really picked still counts.
+    for (float gate : { 0.0f, 0.3f })
+    {
+        InputAnalyzer a;
+        a.prepare (48000.0);
+        a.noteGate.store (gate);
+        GuitarVoice played, leftover;
+        played.prepare (48000.0);
+        leftover.prepare (48000.0);
+        std::vector<float> block (128), other (128);
+        std::vector<int> notes;
+        auto run = [&] (double seconds, float leftoverGain)
+        {
+            for (int b = 0; b < (int) (seconds * 48000.0 / 128.0); ++b)
+            {
+                std::fill (block.begin(), block.end(), 0.0f);
+                std::fill (other.begin(), other.end(), 0.0f);
+                played.render (block.data(), 128);
+                leftover.render (other.data(), 128);
+                for (int i = 0; i < 128; ++i) block[(size_t) i] = 0.3f * block[(size_t) i] + leftoverGain * other[(size_t) i];
+                a.push (block.data(), 128);
+                NoteEvent e;
+                bool got = false;
+                while (a.analyze (e, got))
+                    if (got) notes.push_back (e.midi);
+            }
+        };
+        played.start (55, 0.9f, 48000);        // G3, picked hard
+        run (0.6, 0.0f);
+        played.release();
+        leftover.start (50, 0.9f, 48000);      // the open D string, ringing quietly as the finger lifts
+        run (0.8, 0.05f);
+        leftover.release();
+        run (0.3, 0.0f);
+        played.start (57, 0.9f, 48000);        // A3, picked about 6 dB softer: still a note
+        auto softRun = [&] (double seconds)
+        {
+            for (int b = 0; b < (int) (seconds * 48000.0 / 128.0); ++b)
+            {
+                std::fill (block.begin(), block.end(), 0.0f);
+                played.render (block.data(), 128);
+                for (auto& x : block) x *= 0.15f;
+                a.push (block.data(), 128);
+                NoteEvent e;
+                bool got = false;
+                while (a.analyze (e, got))
+                    if (got) notes.push_back (e.midi);
+            }
+        };
+        softRun (0.6);
+        juce::String got;
+        for (int n : notes) got << n << " ";
+        const bool hasLeftover = std::find (notes.begin(), notes.end(), 50) != notes.end();
+        const bool hasSoft = std::find (notes.begin(), notes.end(), 57) != notes.end();
+        if (gate > 0)
+            CHECK (! hasLeftover && hasSoft && notes.size() == 2, "gate %.1f: leftover ignored, soft pick kept (%s)", gate, got.toRawUTF8());
+        else
+            CHECK (hasLeftover && hasSoft, "no gate: everything counts (%s)", got.toRawUTF8());
+    }
+
     // silence and quiet noise: nothing
     {
         InputAnalyzer a;
@@ -864,6 +925,65 @@ static void testMonitor()
     CHECK (d.process (0.3f, false) == 0.3f, "dry is untouched");
 }
 
+static void testProgressSafety()
+{
+    auto dir = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("guitarcoach-safety");
+    dir.deleteRecursively();
+    dir.createDirectory();
+    auto file = dir.getChildFile ("progress.json");
+
+    // a daily backup is made when an existing file is opened
+    {
+        Progress p (file);
+        p.recordExercise ("L1-staff/0", 9, 10);
+    }
+    {
+        Progress p (file);
+        CHECK (p.passed ("L1-staff/0"), "kept after reopening");
+    }
+    auto backups = dir.getChildFile ("backups").findChildFiles (juce::File::findFiles, false, "progress-*.json");
+    CHECK (backups.size() == 1 && backups[0].loadFileAsString().contains ("L1-staff/0"), "one daily backup with the scores (%d)", backups.size());
+
+    // an unreadable file is copied aside before anything is written over it
+    file.replaceWithText ("{ this is not json");
+    {
+        Progress p (file);
+        p.recordExercise ("L2-neck/0", 8, 10);
+    }
+    auto aside = dir.findChildFiles (juce::File::findFiles, false, "progress-unreadable-*.json");
+    CHECK (aside.size() == 1 && aside[0].loadFileAsString() == "{ this is not json", "unreadable file kept aside (%d)", aside.size());
+
+    // practice time not yet written is saved when the app closes
+    file.deleteFile();
+    {
+        Progress p (file);
+        p.addPracticeSeconds (12.0);
+    }
+    {
+        Progress p (file);
+        CHECK (std::abs (p.day (p.today()).seconds - 12.0) < 1e-6, "short practice saved on close: %.1f s", p.day (p.today()).seconds);
+    }
+
+    // today's plan saved by the previous version (one plan, no byMinutes) is still today's plan
+    file.replaceWithText (R"({"plan":{"date":")" + juce::Time::getCurrentTime().formatted ("%Y-%m-%d")
+                          + R"(","items":{"minutes":45,"items":[{"kind":1,"title":"New: The staff and the treble clef","detail":"x","minutes":10,"lesson":"L1-staff","exercise":0,"drill":0,"scale":"","root":7,"lick":""}]}}})");
+    {
+        Progress p (file);
+        const auto lessons = loadLessons();
+        std::vector<Lesson> theoryL, bluesL;
+        for (auto& l : lessons) (l.track == "blues" ? bluesL : theoryL).push_back (l);
+        const auto licks = loadLicks();
+        const PlanContext ctx { theoryL, bluesL, licks };
+        auto plan = todaysPlan (ctx, p, 45);
+        CHECK (plan.size() == 1 && plan[0].title == "New: The staff and the treble clef", "old saved plan kept (%d items)", (int) plan.size());
+        auto plan30 = todaysPlan (ctx, p, 30);
+        auto again = todaysPlan (ctx, p, 45);
+        CHECK (again.size() == 1 && again[0].title == plan[0].title, "45 -> 30 -> 45 brings the same plan back");
+        CHECK (! plan30.empty(), "a 30 minute plan");
+    }
+    dir.deleteRecursively();
+}
+
 static void testProgress()
 {
     auto file = juce::File::getSpecialLocation (juce::File::tempDirectory).getChildFile ("guitarcoach-test-progress.json");
@@ -905,6 +1025,7 @@ int main()
     std::printf ("lessons\n");   testLessons();
     std::printf ("pitch\n");     testPitch();
     std::printf ("progress\n");  testProgress();
+    std::printf ("safety\n");    testProgressSafety();
     std::printf ("%d checks, %d failed\n", checks, failures);
     return failures == 0 ? 0 : 1;
 }

@@ -513,11 +513,11 @@ void LickPanel::resized()
     inner.removeFromTop (30 + 44 + 4);
     auto controls = inner.removeFromTop (32);
     key.setBounds (controls.removeFromLeft (130).reduced (2));
-    tempo.setBounds (controls.removeFromLeft (260).reduced (2));
-    withBacking.setBounds (controls.removeFromLeft (190));
     turnButton.setBounds (controls.removeFromRight (120).reduced (2, 0));
     controls.removeFromRight (8);
     listenButton.setBounds (controls.removeFromRight (100).reduced (2, 0));
+    withBacking.setBounds (controls.removeFromRight (190));
+    tempo.setBounds (controls.removeFromLeft (juce::jmin (260, controls.getWidth())).reduced (2));
     inner.removeFromTop (8);
     inner.removeFromBottom (40);
     const int h = inner.getHeight();

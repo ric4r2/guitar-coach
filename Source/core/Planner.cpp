@@ -224,15 +224,26 @@ std::vector<PlanItem> makePlan (const PlanContext& c, const Progress& p, int min
 
 std::vector<PlanItem> todaysPlan (const PlanContext& c, Progress& p, int minutes)
 {
+    // today's plans, one per session length, so switching 45 -> 30 -> 45 brings back the same list (and its ticks)
     const auto stored = p.getPlan (p.today());
-    if (stored.isObject() && (int) stored["minutes"] == minutes)
-        if (auto* items = stored["items"].getArray())
+    juce::var all (new juce::DynamicObject());
+    if (stored.isObject() && stored["byMinutes"].isObject())
+        for (auto& kv : stored["byMinutes"].getDynamicObject()->getProperties())
+            all.getDynamicObject()->setProperty (kv.name, kv.value);
+    else if (stored.isObject() && stored["items"].isArray())
+        all.getDynamicObject()->setProperty (juce::String ((int) stored["minutes"]), stored);   // saved by an older version
+
+    const auto one = all[juce::Identifier (juce::String (minutes))];
+    if (one.isObject())
+        if (auto* items = one["items"].getArray())
         {
             std::vector<PlanItem> plan;
             for (auto& v : *items)
                 plan.push_back (PlanItem::fromVar (v));
-            return plan;
+            if (! plan.empty())
+                return plan;
         }
+
     const auto plan = makePlan (c, p, minutes);
     auto* o = new juce::DynamicObject();
     o->setProperty ("minutes", minutes);
@@ -240,7 +251,10 @@ std::vector<PlanItem> todaysPlan (const PlanContext& c, Progress& p, int minutes
     for (auto& item : plan)
         items.add (item.toVar());
     o->setProperty ("items", items);
-    p.setPlan (p.today(), juce::var (o));
+    all.getDynamicObject()->setProperty (juce::String (minutes), juce::var (o));
+    auto* wrapper = new juce::DynamicObject();
+    wrapper->setProperty ("byMinutes", all);
+    p.setPlan (p.today(), juce::var (wrapper));
     return plan;
 }
 

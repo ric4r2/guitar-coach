@@ -239,7 +239,17 @@ AudioPage::AudioPage (AudioEngine& e)
     monitorTone.addItem ("Tone: clean amp", 1);
     monitorTone.addItem ("Tone: dry (straight from the input)", 2);
     monitorTone.onChange = [this] { engine.monitorWarm.store (monitorTone.getSelectedId() == 1); if (onMonitorChanged) onMonitorChanged(); };
-    for (juce::Component* c : { (juce::Component*) &monitorToggle, (juce::Component*) &monitorVolume, (juce::Component*) &monitorTone })
+    noteGate.addItem ("Notes: count everything", 1);
+    noteGate.addItem ("Notes: ignore quiet leftovers", 2);
+    noteGate.addItem ("Notes: only clearly picked notes", 3);
+    noteGate.setTooltip ("Which notes count in exercises: quiet ones (a string ringing when you lift a finger) can be ignored");
+    noteGate.onChange = [this]
+    {
+        const float g[] = { 0.0f, 0.0f, 0.3f, 0.5f };
+        engine.setNoteGate (g[juce::jlimit (0, 3, noteGate.getSelectedId())]);
+        if (onMonitorChanged) onMonitorChanged();
+    };
+    for (juce::Component* c : { (juce::Component*) &monitorToggle, (juce::Component*) &monitorVolume, (juce::Component*) &monitorTone, (juce::Component*) &noteGate })
         addAndMakeVisible (c);
     syncMonitor();
     startTimerHz (30);
@@ -250,6 +260,8 @@ void AudioPage::syncMonitor()
     monitorToggle.setToggleState (engine.monitorOn.load(), juce::dontSendNotification);
     monitorVolume.setValue (engine.monitorVolume.load(), juce::dontSendNotification);
     monitorTone.setSelectedId (engine.monitorWarm.load() ? 1 : 2, juce::dontSendNotification);
+    const float gate = engine.getNoteGate();
+    noteGate.setSelectedId (gate < 0.15f ? 1 : gate < 0.4f ? 2 : 3, juce::dontSendNotification);
 }
 
 void AudioPage::timerCallback()
@@ -321,10 +333,12 @@ void AudioPage::resized()
     auto bottom = r.reduced (20, 14).removeFromBottom (170);
     bottom.removeFromTop (30);
     auto mon = bottom.removeFromTop (30);
-    monitorToggle.setBounds (mon.removeFromLeft (170));
-    monitorTone.setBounds (mon.removeFromLeft (290).reduced (2));
+    monitorToggle.setBounds (mon.removeFromLeft (160));
+    monitorTone.setBounds (mon.removeFromLeft (juce::jmin (290, mon.getWidth())).reduced (2));
     auto mon2 = bottom.removeFromTop (30);
-    monitorVolume.setBounds (mon2.removeFromLeft (mon2.getWidth() - 180));
+    noteGate.setBounds (mon2.removeFromRight (juce::jmin (280, mon2.getWidth() / 2)).reduced (2));
+    mon2.removeFromRight (12);
+    monitorVolume.setBounds (mon2);
     bottom.removeFromTop (4 + 22);
     auto row = bottom.removeFromTop (28);
     outVolume.setBounds (row.removeFromLeft (row.getWidth() - 180));
@@ -357,6 +371,7 @@ MainComponent::MainComponent (AudioEngine& e, Progress& p)
     engine.monitorOn.store ((bool) progress.setting ("monitorOn", true));
     engine.monitorVolume.store ((float) (double) progress.setting ("monitorVolume", 0.7));
     engine.monitorWarm.store ((bool) progress.setting ("monitorWarm", true));
+    engine.setNoteGate ((float) (double) progress.setting ("noteGate", 0.3));
     audioPage.syncMonitor();
     audioPage.onMonitorChanged = [this] { saveMonitor(); repaint (livePill()); };
     theoryPage.onProgressChanged = [this] { homePage.refresh(); };
@@ -370,6 +385,9 @@ MainComponent::MainComponent (AudioEngine& e, Progress& p)
 MainComponent::~MainComponent()
 {
     stopTimer();
+    if (unsentSeconds > 0.0)
+        progress.addPracticeSeconds (unsentSeconds);
+    progress.flush();
     setLookAndFeel (nullptr);
 }
 
@@ -419,6 +437,7 @@ void MainComponent::saveMonitor()
     progress.setSetting ("monitorOn", engine.monitorOn.load());
     progress.setSetting ("monitorVolume", (double) engine.monitorVolume.load());
     progress.setSetting ("monitorWarm", engine.monitorWarm.load());
+    progress.setSetting ("noteGate", (double) engine.getNoteGate());
 }
 
 juce::Rectangle<int> MainComponent::livePill() const

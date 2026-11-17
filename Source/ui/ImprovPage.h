@@ -19,6 +19,7 @@ private:
 // Backing tracks: key, form, feel, tempo and parts; the chart follows the band; the neck shows what to play.
 class BackingPanel : public juce::Component, public LiveInput, private juce::Timer
 {
+    friend struct PathTester;   // Tests/Paths.cpp drives every screen
 public:
     explicit BackingPanel (AudioEngine&);
     ~BackingPanel() override;
@@ -46,6 +47,7 @@ private:
 // The lick library: notation and tab, the neck, listen at any tempo, then play it back and get scored.
 class LickPanel : public juce::Component, public LiveInput, private juce::Timer
 {
+    friend struct PathTester;   // Tests/Paths.cpp drives every screen
 public:
     LickPanel (AudioEngine&, Progress&);
     void notePlayed (const NoteEvent&) override;
@@ -90,6 +92,7 @@ private:
 
 class ImprovPage : public juce::Component, public LiveInput
 {
+    friend struct PathTester;   // Tests/Paths.cpp drives every screen
 public:
     enum Tab { lessonsTab, backingTab, licksTab };
     ImprovPage (AudioEngine&, Progress&, const std::vector<Lesson>& bluesLessons);

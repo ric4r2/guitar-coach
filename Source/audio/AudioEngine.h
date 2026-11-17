@@ -27,6 +27,8 @@ public:
     bool popNote (NoteEvent& e);                // notes played since the last call
     bool popOnset (double& seconds) { return analyzer.popOnset (seconds); }   // attacks, for rhythm tapping
     float takeInputPeak() { return analyzer.takeInputPeak(); }
+    void setNoteGate (float g) { analyzer.noteGate.store (g); }
+    float getNoteGate() const { return analyzer.noteGate.load(); }
     void setInputChannel (int channel);         // -1 = all active inputs mixed, otherwise 0-based active input
     int getInputChannel() const { return inputChannel.load(); }
 

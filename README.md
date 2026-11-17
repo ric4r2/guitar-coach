@@ -12,12 +12,14 @@ tuner and metronome; a daily session planner with spaced-repetition reviews, and
 
 ```
 cmake -B build -G "Visual Studio 17 2022" -A x64 -DGUITARCOACH_BUILD_TESTS=ON
-cmake --build build --config Release --target GuitarCoach GuitarCoachTests GuitarCoachSnapshot
+cmake --build build --config Release --target GuitarCoach GuitarCoachTests GuitarCoachSnapshot GuitarCoachPaths
 ```
 
 - The app: `build/GuitarCoach_artefacts/Release/GuitarCoach.exe`
 - Tests: `build/GuitarCoachTests_artefacts/Release/GuitarCoachTests.exe`
 - Screens to PNG: `build/GuitarCoachSnapshot_artefacts/Release/GuitarCoachSnapshot.exe <folder>`
+- Every user path (all exercises answered right, wrong then right and with Show answer; drills, licks, settings, window sizes): `build/GuitarCoachPaths_artefacts/Release/GuitarCoachPaths.exe <folder>`
+- Progress lives in `%APPDATA%GuitarCoachprogress.json`; a copy is kept each day in `backups` (the last 30 days).
 
 JUCE is taken from `../GuitarDrive/build/_deps/juce-src` when present (otherwise downloaded), and ASIO
 is enabled when the Steinberg SDK is at `../_sdk/ASIO-SDK_2.3.4/ASIOSDK` (or pass `-DASIO_SDK_DIR=`).

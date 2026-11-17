@@ -9,6 +9,8 @@ public:
     static constexpr double passMark = 0.8;
 
     explicit Progress (juce::File file);
+    ~Progress();                      // saves any practice time not yet written
+    void flush();                     // write now, including practice seconds still pending
     static juce::File defaultFile();
 
     // dates are "YYYY-MM-DD"; tests can pretend it is another day

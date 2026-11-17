@@ -27,7 +27,7 @@ void InputAnalyzer::prepare (double sr)
     lastAnalysed = 0;
     candidate = emitted = -1;
     candidateCount = quietCount = 0;
-    slowLevel = 0.0f;
+    slowLevel = recentPeak = 0.0f;
     framesSinceOnset = 1000;
     retrigger = false;
     latestValid.store (false);
@@ -110,6 +110,10 @@ bool InputAnalyzer::analyze (NoteEvent& event, bool& gotEvent)
         frameEnergy += (double) frame[(size_t) i] * frame[(size_t) i];
     const float frameLevel = (float) std::sqrt (frameEnergy / PitchDetector::windowSize);
     const bool good = r.valid && r.confidence > 0.8f && r.frequency > 70.0f && r.frequency < 1400.0f && frameLevel > minLevel;
+    // the level you have been playing at: follows a loud note at once, lets go over about 1.5 s
+    recentPeak = std::max (frameLevel, recentPeak * 0.994f);
+    const bool freshPluck = framesSinceOnset <= 25;
+    const bool loudEnough = frameLevel >= noteGate.load (std::memory_order_relaxed) * recentPeak * (freshPluck ? 0.5f : 1.0f);
 
     latestLevel.store (level);
     if (good)
@@ -130,7 +134,7 @@ bool InputAnalyzer::analyze (NoteEvent& event, bool& gotEvent)
             candidateCount = 1;
         }
 
-        if (candidateCount >= stableFrames && (candidate != emitted || retrigger))
+        if (candidateCount >= stableFrames && (candidate != emitted || retrigger) && loudEnough)
         {
             emitted = candidate;
             retrigger = false;

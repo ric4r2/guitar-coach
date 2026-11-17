@@ -22,6 +22,7 @@ private:
 // The Progress tab: streak and totals, the chart, fastest clean tempos, what needs work, reviews coming up.
 class StatsPage : public juce::Component
 {
+    friend struct PathTester;   // Tests/Paths.cpp drives every screen
 public:
     StatsPage (Progress&, const std::vector<Lesson>& theory, const std::vector<Lesson>& blues);
     void refresh();

@@ -17,6 +17,7 @@ private:
 // Metronome controls; the clicks themselves come from the audio engine.
 class MetronomePanel : public juce::Component, private juce::Timer
 {
+    friend struct PathTester;   // Tests/Paths.cpp drives every screen
 public:
     explicit MetronomePanel (AudioEngine&);
     void paint (juce::Graphics&) override;
@@ -34,6 +35,7 @@ private:
 // The neck with every note named, by letter or by interval from a chosen root, plus the note-finder drill.
 class FretboardExplorer : public juce::Component, public LiveInput, private juce::Timer
 {
+    friend struct PathTester;   // Tests/Paths.cpp drives every screen
 public:
     FretboardExplorer (AudioEngine&, Progress&);
     void notePlayed (const NoteEvent&) override;
@@ -67,6 +69,7 @@ private:
 // metronome 5 BPM after each clean run (and lowers it after a sloppy one).
 class PatternTrainer : public juce::Component, public LiveInput, private juce::Timer
 {
+    friend struct PathTester;   // Tests/Paths.cpp drives every screen
 public:
     enum class Mode { scales, technique };
     PatternTrainer (AudioEngine&, Progress&, Mode);
@@ -116,6 +119,7 @@ private:
 
 class PracticePage : public juce::Component, public LiveInput
 {
+    friend struct PathTester;   // Tests/Paths.cpp drives every screen
 public:
     enum Tab { fretboardTab, scalesTab, techniqueTab };
     PracticePage (AudioEngine&, Progress&);

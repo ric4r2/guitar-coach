@@ -8,6 +8,7 @@ ExerciseView::ExerciseView (AudioEngine& e, Progress& p) : engine (e), progress 
     addChildComponent (listenButton);
     addChildComponent (nextButton);
     addChildComponent (againButton);
+    addChildComponent (doneButton);
     addChildComponent (tapPad);
     setWantsKeyboardFocus (true);
     tapPad.onTap = [this]
@@ -52,6 +53,7 @@ ExerciseView::ExerciseView (AudioEngine& e, Progress& p) : engine (e), progress 
         nextQuestion();
     };
     againButton.onClick = [this] { start (*lesson, exerciseIndex); };
+    doneButton.onClick = [this] { stopTimer(); engine.stopNotes(); engine.getBacking().stop(); if (onBack) onBack(); };
 
     staff.onPlace = [this] (const theory::Note& n)
     {
@@ -198,6 +200,7 @@ void ExerciseView::updateButtons()
     nextButton.setVisible (! finished && (done || q.acceptsPlaying || q.fretClick || q.staffClick || q.tapRhythm || ! q.sequence.empty()));
     nextButton.setButtonText (done ? (questionNumber >= questionsPerRound ? "Finish" : "Next") : "Show answer");
     againButton.setVisible (finished);
+    doneButton.setVisible (finished);
     const bool canListen = ! q.listenMidi.empty() || ! q.listenChords.empty() || q.listenBacking >= 0;
     listenButton.setVisible (! finished && canListen && (q.autoListen || done || q.listenBeforeAnswer));
     for (auto* b : choiceButtons)
@@ -217,8 +220,7 @@ void ExerciseView::attempt (bool correct, const juce::String& hint, bool isChoic
         feedback = (missed ? "Found it. " : "Right! ") + q.explanation;
         feedbackColour = Palette::green;
         reveal (true);
-        if (! missed)
-            startTimer (1600);   // straight on to the next question
+        startTimer (missed ? 2600 : 1600);   // on to the next question; a little longer to read after a retry
     }
     else
     {
@@ -554,7 +556,7 @@ void ExerciseView::paint (juce::Graphics& g)
     g.drawText (spec.title, top.removeFromLeft (top.getWidth() - 360), juce::Justification::centredLeft);
     g.setColour (Palette::dim);
     g.setFont (Fonts::ui (16.0f));
-    g.drawText (finished ? "Done" : "Question " + juce::String (questionNumber) + " of " + juce::String (questionsPerRound)
+    g.drawText (finished ? "Round complete" : "Question " + juce::String (questionNumber) + " of " + juce::String (questionsPerRound)
                     + juce::String::fromUTF8 ("   ·   score ") + juce::String (score)
                     + (! q.sequence.empty() && ! done ? juce::String::fromUTF8 ("   ·   note ") + juce::String (seqPos + 1) + " of " + juce::String ((int) q.sequence.size()) : juce::String()),
                 top, juce::Justification::centredRight);
@@ -620,7 +622,8 @@ void ExerciseView::resized()
     nextButton.setBounds (bottom.removeFromRight (150).reduced (0, 2));
     bottom.removeFromRight (10);
     listenButton.setBounds (bottom.removeFromRight (120).reduced (0, 2));
-    againButton.setBounds (getLocalBounds().withSizeKeepingCentre (180, 40).translated (0, 90));
+    againButton.setBounds (getLocalBounds().withSizeKeepingCentre (180, 40).translated (-100, 90));
+    doneButton.setBounds (getLocalBounds().withSizeKeepingCentre (180, 40).translated (100, 90));
 
     if (finished)
         return;

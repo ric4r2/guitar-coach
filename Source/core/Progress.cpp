@@ -4,9 +4,43 @@
 Progress::Progress (juce::File f) : file (std::move (f))
 {
     if (file.existsAsFile())
+    {
         data = juce::JSON::parse (file);
+        if (! data.isObject() && file.getSize() > 0)
+        {
+            // never write over a file we could not read: keep it next to the new one
+            file.copyFileTo (file.getSiblingFile ("progress-unreadable-" + juce::Time::getCurrentTime().formatted ("%Y%m%d-%H%M%S") + ".json"));
+        }
+        else if (data.isObject())
+        {
+            // one backup a day (the first time the app opens that day), the last 30 kept
+            auto dir = file.getSiblingFile ("backups");
+            auto backup = dir.getChildFile ("progress-" + juce::Time::getCurrentTime().formatted ("%Y-%m-%d") + ".json");
+            if (dir.createDirectory() && ! backup.existsAsFile())
+                file.copyFileTo (backup);
+            auto old = dir.findChildFiles (juce::File::findFiles, false, "progress-????-??-??.json");
+            old.sort();
+            for (int i = 0; i < old.size() - 30; ++i)
+                old.getReference (i).deleteFile();
+        }
+    }
     if (! data.isObject())
         data = juce::var (new juce::DynamicObject());
+}
+
+Progress::~Progress()
+{
+    flush();
+}
+
+void Progress::flush()
+{
+    if (unsavedSeconds > 0.0)
+    {
+        unsavedSeconds = 0.0;
+        section ("days")->setProperty (today(), true);
+    }
+    save();
 }
 
 juce::File Progress::defaultFile()

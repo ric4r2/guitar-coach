@@ -6,6 +6,7 @@
 // Lesson list on the left; on the right the lesson (diagram, text, exercises) or a running exercise.
 class TheoryPage : public juce::Component, public LiveInput
 {
+    friend struct PathTester;   // Tests/Paths.cpp drives every screen
 public:
     TheoryPage (AudioEngine&, Progress&, const std::vector<Lesson>&);
 

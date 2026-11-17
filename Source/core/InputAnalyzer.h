@@ -37,6 +37,11 @@ public:
     static constexpr int silenceFrames = 4;
     static constexpr float minLevel = 0.004f;    // RMS, about -48 dBFS
 
+    // Note gate: a note counts only when it is at least this fraction of the level you have just been playing at
+    // (a fresh pick attack gets half of it). Keeps quiet leftovers out: the open string that rings when you lift a
+    // finger, other strings ringing along, fret noise. 0 = everything above the noise floor counts.
+    std::atomic<float> noteGate { 0.3f };
+
     void prepare (double inputSampleRate);
     void push (const float* x, int n);
 
@@ -77,7 +82,7 @@ private:
     PitchDetector detector;
     std::vector<float> frame = std::vector<float> ((size_t) PitchDetector::frameSize, 0.0f);
     int candidate = -1, candidateCount = 0, emitted = -1, quietCount = 0;
-    float slowLevel = 0.0f;
+    float slowLevel = 0.0f, recentPeak = 0.0f;
     std::array<float, 4> recentHf {};   // high-frequency level of the last hops, newest first
     bool retrigger = false;
     int framesSinceOnset = 1000, framesSinceReport = 1000;

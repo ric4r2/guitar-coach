@@ -21,6 +21,7 @@ public:
 
 class HomePage : public juce::Component
 {
+    friend struct PathTester;   // Tests/Paths.cpp drives every screen
 public:
     HomePage (Progress&, const std::vector<Lesson>& theory, const std::vector<Lesson>& blues);
     std::function<void (int lesson)> onContinue;
@@ -43,6 +44,7 @@ private:
 
 class AudioPage : public juce::Component, public LiveInput, private juce::Timer
 {
+    friend struct PathTester;   // Tests/Paths.cpp drives every screen
 public:
     explicit AudioPage (AudioEngine&);
     std::function<void()> onMonitorChanged;   // to save the choice
@@ -58,7 +60,7 @@ private:
     juce::TextButton testButton { "Play test notes" };
     juce::Slider outVolume, monitorVolume;
     juce::ToggleButton monitorToggle { "Hear my guitar" };
-    juce::ComboBox monitorTone;
+    juce::ComboBox monitorTone, noteGate;
     PitchFrame frame;
     NoteEvent lastNote;
     juce::uint32 lastNoteTime = 0;
@@ -68,6 +70,7 @@ private:
 
 class MainComponent : public juce::Component, private juce::Timer
 {
+    friend struct PathTester;   // Tests/Paths.cpp drives every screen
 public:
     enum Page { home, theory, improv, practice, stats, audio, numPages };
 
